@@ -20,7 +20,7 @@ const {
   getOneDeadLine,
 } = require("../controllers/app");
 
-//added to the gateway service
+//added to the gateway servicee
 router.route("/user-data").patch(update_user_data).get(get_user_data);
 
 //not added
