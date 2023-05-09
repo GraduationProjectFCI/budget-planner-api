@@ -1,6 +1,7 @@
 const express = require("express");
 require("dotenv").config();
 const app = express();
+const mongoose = require("mongoose");
 
 // import created functions
 const connectDB = require("./db/connection");
@@ -20,11 +21,17 @@ app.get("/", (req, res) => {
 
 const start = async () => {
   const port = 3000;
+
   try {
-    app.listen(port, "0.0.0.0", async () => {
-      await connectDB(process.env.MONGODB_URI);
-      console.log(`app is listening on port :${port}`);
-    });
+    mongoose
+      .connect(process.env.MONGODB_URI)
+      .then(() => {
+        console.log("Connected to the Database");
+        app.listen(port, "0.0.0.0", async () => {
+          console.log(`app is listening on port :${port}`);
+        });
+      })
+      .catch((err) => console.log(err));
   } catch (error) {
     console.log(error);
   }
