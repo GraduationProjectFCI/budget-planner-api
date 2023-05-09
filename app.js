@@ -4,7 +4,6 @@ const app = express();
 const mongoose = require("mongoose");
 
 // import created functions
-const connectDB = require("./db/connection");
 const authRouter = require("./routes/auth");
 const appRouter = require("./routes/app");
 
