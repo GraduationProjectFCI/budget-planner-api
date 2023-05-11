@@ -385,7 +385,7 @@ const addStatistics = (req, res) => {
 // ##### SHEETS #########
 const addSheets = (req, res) => {
   const errorLog = [];
-  const { sheet_type } = req.body;
+  const { sheet_type, value } = req.body;
 
   // validate bearer token
   const bearerHeader = req.headers["authorization"];
@@ -419,6 +419,7 @@ const addSheets = (req, res) => {
           const newSheet = new Sheets({
             user_id: authData.userId,
             sheet_type,
+            value,
           });
           newSheet
             .save()
