@@ -402,6 +402,10 @@ const addSheets = (req, res) => {
           msg: "Forbidden",
         });
       } else {
+        if (!value) {
+          errorLog.push("value is required");
+        }
+
         if (!authData.userId) {
           errorLog.push("user_id is not valid");
         }
