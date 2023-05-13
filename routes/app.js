@@ -12,7 +12,6 @@ const {
   deleteSheets,
   updateSheet,
   getStatistics,
-
   addDeadline,
   getDeadlines,
   deleteDeadline,
@@ -25,16 +24,30 @@ const {
   getProfileData,
   updateProfileData,
 } = require("../controllers/app");
+const expenses = require("../models/expenses");
 
 //added to the gateway servicee
-router.route("/user-data").patch(update_user_data).get(get_user_data);
+router.route("/user-data").get(get_user_data);
 
 //not added
 router.route("/labels").post(addLabels).get(getLabels);
 router.route("/labels/:label_id").delete(deleteLabels);
 
+//add sheet
+//delete sheet
 router.route("/sheets").get(getSheets).post(addSheets);
-router.route("/sheets/:sheet_id").delete(deleteSheets).patch(updateSheet);
+
+router
+  .route("/sheets/:sheet_id")
+  .delete(deleteSheets)
+  .patch(updateSheet)
+  .post(addExpenses)
+  .get(getExpenses);
+
+router
+  .route("/sheets/:sheet_id/:expense_id")
+  .delete(deleteExpense)
+  .patch(updateExpense);
 
 router.route("/statistics").get(getStatistics);
 
@@ -44,12 +57,6 @@ router
   .delete(deleteDeadline)
   .patch(updateDeadline)
   .get(getOneDeadLine);
-
-router.route("/expenses").post(addExpenses).get(getExpenses);
-router
-  .route("/expenses/:expense_id")
-  .delete(deleteExpense)
-  .patch(updateExpense);
 
 router.route("/profile").get(getProfileData).patch(updateProfileData);
 module.exports = router;

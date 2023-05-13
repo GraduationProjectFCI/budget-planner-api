@@ -5,12 +5,13 @@ const Deadlines = require("../models/deadlineSchema");
 const Expenses = require("../models/expenses");
 const User = require("../models/user");
 const statistics = require("../models/statesSchema");
+const SheetValue = require("./SheetValue");
 
 const Do_Statistics = require("./statistics");
 
 const jwt = require("jsonwebtoken");
 
-// ######## USER DATA ##########
+// ######## USER Profile ##########
 const getProfileData = (req, res) => {
   const errorLog = [];
   // validate bearer token in the request headers
@@ -108,6 +109,7 @@ const updateProfileData = (req, res) => {
 
 // ######## EXPENSES ##########
 const addExpenses = (req, res) => {
+  const { sheet_id } = req.params;
   const errorLog = [];
   const { value, label, description } = req.body;
   // validate bearer token in the request headers
@@ -142,7 +144,6 @@ const addExpenses = (req, res) => {
             errorLog,
           });
         } else {
-          Do_Statistics(authData.userId);
           const userLabels = [];
 
           //get user labels
@@ -158,7 +159,7 @@ const addExpenses = (req, res) => {
             });
           } else {
             const newExpense = new Expenses({
-              user_id: authData.userId,
+              sheet_id,
               value,
               label,
               description,
@@ -166,6 +167,8 @@ const addExpenses = (req, res) => {
             newExpense
               .save()
               .then(async (data) => {
+                Do_Statistics(authData.userId);
+                SheetValue(sheet_id);
                 const user_data = await UserData.findOne({
                   user_id: authData.userId,
                 });
@@ -258,7 +261,7 @@ const getExpenses = (req, res) => {
 
 const deleteExpense = (req, res) => {
   const errorLog = [];
-  const { expense_id } = req.params;
+  const { expense_id, sheet_id } = req.params;
   // validate bearer token in the request headers
   const bearerHeader = req.headers["authorization"];
   if (typeof bearerHeader === "undefined") {
@@ -314,11 +317,13 @@ const deleteExpense = (req, res) => {
               .deleteOne({
                 _id: expense_id,
               })
-              .then(
+              .then(() => {
+                Do_Statistics(authData.userId);
+                SheetValue(sheet_id);
                 res.status(200).json({
                   msg: "Expense Deleted Successfully",
-                })
-              );
+                });
+              });
           }
         }
       }
@@ -328,7 +333,7 @@ const deleteExpense = (req, res) => {
 
 const updateExpense = (req, res) => {
   const errorLog = [];
-  const { expense_id } = req.params;
+  const { expense_id, sheet_id } = req.params;
   const { value, label, description } = req.body;
   // validate bearer token in the request headers
   const bearerHeader = req.headers["authorization"];
@@ -376,12 +381,11 @@ const updateExpense = (req, res) => {
               description,
             })
             .then(async (data) => {
+              Do_Statistics(authData.userId);
+              SheetValue(sheet_id);
+
               const spent_budget = user_data.spent + (value - expense.value);
-
-              console.log(spent_budget);
-
               const remaining_budget = user_data.total - spent_budget;
-              console.log(remaining_budget);
               await UserData.findOneAndUpdate(
                 {
                   user_id: authData.userId,
@@ -730,7 +734,7 @@ const getStatistics = (req, res) => {
 // ##### SHEETS #########
 const addSheets = (req, res) => {
   const errorLog = [];
-  const { sheet_type, value } = req.body;
+  const { sheet_type } = req.body;
 
   // validate bearer token
   const bearerHeader = req.headers["authorization"];
@@ -747,10 +751,6 @@ const addSheets = (req, res) => {
           msg: "Forbidden",
         });
       } else {
-        if (!value) {
-          errorLog.push("value is required");
-        }
-
         if (!authData.userId) {
           errorLog.push("user_id is not valid");
         }
@@ -769,7 +769,7 @@ const addSheets = (req, res) => {
           const newSheet = new Sheets({
             user_id: authData.userId,
             sheet_type,
-            value,
+            value: 0,
           });
           newSheet
             .save()
@@ -1081,6 +1081,7 @@ const deleteLabels = (req, res) => {
         } else {
           Labels.findByIdAndDelete(label_id)
             .then((data) => {
+              Do_Statistics(authData.userId);
               res.status(200).json({
                 msg: "Label Deleted Successfully",
                 data,
@@ -1098,72 +1099,6 @@ const deleteLabels = (req, res) => {
 };
 
 // ######## USERDATA #########
-const update_user_data = async (req, res) => {
-  const errorLog = [];
-  const { spent } = req.body;
-
-  //validate bearer token
-  const bearerHeader = req.headers["authorization"];
-  if (typeof bearerHeader === "undefined") {
-    res.status(401).json({
-      msg: "Unauthorized",
-    });
-  } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-        if (!spent) {
-          errorLog.push("spent is required");
-        }
-
-        if (!total) {
-          errorLog.push("total is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
-          });
-        } else {
-          //get user total budget from the usre data
-          const total = await User.findOne({
-            user_id: authData.userId,
-          }).select("budget");
-
-          const response = await UserData.findOneAndUpdate(
-            { user_id: authData.userId },
-            {
-              spent,
-              remaining: total - spent,
-              total,
-              updated_at: Date.now(),
-            }
-          );
-
-          if (response) {
-            res.status(200).json({
-              msg: "User Data Updated Successfully",
-            });
-          } else {
-            res.status(500).json({
-              msg: "Something went wrong",
-            });
-          }
-        }
-      }
-    });
-  }
-};
-
 const get_user_data = (req, res) => {
   const errorLog = [];
 
@@ -1210,7 +1145,6 @@ const get_user_data = (req, res) => {
 };
 
 module.exports = {
-  update_user_data,
   get_user_data,
   addLabels,
   getLabels,
