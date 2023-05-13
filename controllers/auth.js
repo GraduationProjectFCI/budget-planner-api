@@ -248,7 +248,7 @@ const confirmation = async (req, res) => {
       user_id: response._id,
       total: response.budget,
       spent: 0,
-      remaining: 0,
+      remaining: response.budget,
     });
 
     await Code.findOneAndUpdate({ user_id: req.body.user_id }, { used: true });

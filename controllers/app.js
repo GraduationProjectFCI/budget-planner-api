@@ -1,10 +1,412 @@
 const UserData = require("../models/user_data_modal");
 const Labels = require("../models/LabelSchema");
 const Sheets = require("../models/sheetSchema");
-const Statistics = require("../models/statesSchema");
 const Deadlines = require("../models/deadlineSchema");
+const Expenses = require("../models/expenses");
+const User = require("../models/user");
+const statistics = require("../models/statesSchema");
+
+const Do_Statistics = require("./statistics");
 
 const jwt = require("jsonwebtoken");
+
+// ######## USER DATA ##########
+const getProfileData = (req, res) => {
+  const errorLog = [];
+  // validate bearer token in the request headers
+  const bearerHeader = req.headers["authorization"];
+  if (typeof bearerHeader === "undefined") {
+    res.status(401).json({
+      msg: "Unauthorized",
+    });
+  } else {
+    const bearer = bearerHeader.split(" ");
+    const bearerToken = bearer[1];
+    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+      if (err) {
+        res.status(403).json({
+          msg: "Forbidden",
+        });
+      } else {
+        if (!authData.userId) {
+          errorLog.push("user_id is required");
+        }
+
+        if (errorLog.length > 0) {
+          res.status(400).json({
+            msg: "Bad Request",
+            errorLog,
+          });
+        } else {
+          const userData = await User.findOne({
+            _id: authData.userId,
+          })
+            .select("-password")
+            .select("-_id")
+            .select("-__v");
+          res.status(200).json({
+            msg: "success",
+            userData,
+          });
+        }
+      }
+    });
+  }
+};
+
+const updateProfileData = (req, res) => {
+  const errorLog = [];
+  // validate bearer token in the request headers
+  const bearerHeader = req.headers["authorization"];
+  if (typeof bearerHeader === "undefined") {
+    res.status(401).json({
+      msg: "Unauthorized",
+    });
+  } else {
+    const bearer = bearerHeader.split(" ");
+    const bearerToken = bearer[1];
+    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+      if (err) {
+        res.status(403).json({
+          msg: "Forbidden",
+        });
+      } else {
+        if (!authData.userId) {
+          errorLog.push("user_id is required");
+        }
+        if (errorLog.length > 0) {
+          res.status(400).json({
+            msg: "Bad Request",
+            errorLog,
+          });
+        } else {
+          const { name, gender, budget, currnecy, birthdate } = req.body;
+          const userData = await User.findOneAndUpdate(
+            {
+              _id: authData.userId,
+            },
+            {
+              name,
+              gender,
+              budget,
+              currnecy,
+              birthdate,
+            },
+            {
+              new: true,
+            }
+          );
+          res.status(200).json({
+            msg: "updated Successfully",
+            userData,
+          });
+        }
+      }
+    });
+  }
+};
+
+// ######## EXPENSES ##########
+const addExpenses = (req, res) => {
+  const errorLog = [];
+  const { value, label, description } = req.body;
+  // validate bearer token in the request headers
+  const bearerHeader = req.headers["authorization"];
+  if (typeof bearerHeader === "undefined") {
+    res.status(401).json({
+      msg: "Unauthorized",
+    });
+  } else {
+    const bearer = bearerHeader.split(" ");
+    const bearerToken = bearer[1];
+    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+      if (err) {
+        res.status(403).json({
+          msg: "Forbidden",
+        });
+      } else {
+        if (!authData.userId) {
+          errorLog.push("user_id is required");
+        }
+
+        if (!value) {
+          errorLog.push("value is required");
+        }
+        if (!label) {
+          errorLog.push("label is required");
+        }
+
+        if (errorLog.length > 0) {
+          res.status(400).json({
+            msg: "Bad Request",
+            errorLog,
+          });
+        } else {
+          Do_Statistics(authData.userId);
+          const userLabels = [];
+
+          //get user labels
+          const labels = await Labels.find({ user_id: authData.userId });
+          labels.map((label) => {
+            userLabels.push(label.label);
+          });
+
+          //check if label is in user labels
+          if (!userLabels.includes(label)) {
+            res.status(400).json({
+              msg: "Label does not exist",
+            });
+          } else {
+            const newExpense = new Expenses({
+              user_id: authData.userId,
+              value,
+              label,
+              description,
+            });
+            newExpense
+              .save()
+              .then(async (data) => {
+                const user_data = await UserData.findOne({
+                  user_id: authData.userId,
+                });
+
+                const spent_budget = user_data.spent + value;
+                const remaining_budget = user_data.total - spent_budget;
+
+                await UserData.findOneAndUpdate(
+                  {
+                    user_id: authData.userId,
+                  },
+                  {
+                    spent: spent_budget,
+                    remaining: remaining_budget,
+                  }
+                );
+
+                res.status(200).json({
+                  msg: "Expense Added Successfully",
+                  data,
+                });
+              })
+              .catch((err) => {
+                res.status(500).json({
+                  msg: "Internal Server Error",
+                  err,
+                });
+              });
+          }
+        }
+      }
+    });
+  }
+};
+
+const getExpenses = (req, res) => {
+  const errorLog = [];
+  const { label } = req.body;
+  // validate bearer token in the request headers
+  const bearerHeader = req.headers["authorization"];
+  if (typeof bearerHeader === "undefined") {
+    res.status(401).json({
+      msg: "Unauthorized",
+    });
+  } else {
+    const bearer = bearerHeader.split(" ");
+    const bearerToken = bearer[1];
+    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+      if (err) {
+        res.status(403).json({
+          msg: "Forbidden",
+        });
+      } else {
+        if (!authData.userId) {
+          errorLog.push("user_id is required");
+        }
+        if (label) {
+          Expenses.find({ user_id: authData.userId, label })
+            .then((data) => {
+              res.status(200).json({
+                msg: "Expenses Fetched Successfully",
+                data,
+              });
+            })
+            .catch((err) => {
+              res.status(500).json({
+                msg: "Internal Server Error",
+                err,
+              });
+            });
+        } else {
+          Expenses.find({ user_id: authData.userId })
+            .then((data) => {
+              res.status(200).json({
+                msg: "Expenses Fetched Successfully",
+                data,
+              });
+            })
+            .catch((err) => {
+              res.status(500).json({
+                msg: "Internal Server Error",
+                err,
+              });
+            });
+        }
+      }
+    });
+  }
+};
+
+const deleteExpense = (req, res) => {
+  const errorLog = [];
+  const { expense_id } = req.params;
+  // validate bearer token in the request headers
+  const bearerHeader = req.headers["authorization"];
+  if (typeof bearerHeader === "undefined") {
+    res.status(401).json({
+      msg: "Unauthorized",
+    });
+  } else {
+    const bearer = bearerHeader.split(" ");
+    const bearerToken = bearer[1];
+    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+      if (err) {
+        res.status(403).json({
+          msg: "Forbidden",
+        });
+      } else {
+        if (!expense_id) {
+          errorLog.push("expense_id is required");
+        }
+        if (errorLog.length > 0) {
+          res.status(400).json({
+            msg: "Bad Request",
+            errorLog,
+          });
+        } else {
+          const user_data = await UserData.findOne({
+            user_id: authData.userId,
+          });
+
+          const expense = await Expenses.findOne({
+            _id: expense_id,
+          });
+          if (!expense) {
+            res.status(400).json({
+              msg: "Expense does not exist",
+            });
+          } else {
+            const spent_budget = user_data.spent - expense.value;
+            const remaining_budget = user_data.total - spent_budget;
+
+            // update userData
+            await UserData.findOneAndUpdate(
+              {
+                user_id: authData.userId,
+              },
+              {
+                spent: spent_budget,
+                remaining: remaining_budget,
+              }
+            );
+
+            // delete expense
+            await expense
+              .deleteOne({
+                _id: expense_id,
+              })
+              .then(
+                res.status(200).json({
+                  msg: "Expense Deleted Successfully",
+                })
+              );
+          }
+        }
+      }
+    });
+  }
+};
+
+const updateExpense = (req, res) => {
+  const errorLog = [];
+  const { expense_id } = req.params;
+  const { value, label, description } = req.body;
+  // validate bearer token in the request headers
+  const bearerHeader = req.headers["authorization"];
+  if (typeof bearerHeader === "undefined") {
+    res.status(401).json({
+      msg: "Unauthorized",
+    });
+  } else {
+    const bearer = bearerHeader.split(" ");
+    const bearerToken = bearer[1];
+    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+      if (err) {
+        res.status(403).json({
+          msg: "Forbidden",
+        });
+      } else {
+        if (!expense_id) {
+          errorLog.push("expense_id is required");
+        }
+        if (!value) {
+          errorLog.push("value is required");
+        }
+        if (!label) {
+          errorLog.push("label is required");
+        }
+        if (!description) {
+          errorLog.push("description is required");
+        }
+        if (errorLog.length > 0) {
+          res.status(400).json({
+            msg: "Bad Request",
+            errorLog,
+          });
+        } else {
+          const user_data = await UserData.findOne({
+            user_id: authData.userId,
+          });
+
+          const expense = await Expenses.findOne({ _id: expense_id });
+
+          await expense
+            .updateOne({
+              value,
+              label,
+              description,
+            })
+            .then(async (data) => {
+              const spent_budget = user_data.spent + (value - expense.value);
+
+              console.log(spent_budget);
+
+              const remaining_budget = user_data.total - spent_budget;
+              console.log(remaining_budget);
+              await UserData.findOneAndUpdate(
+                {
+                  user_id: authData.userId,
+                },
+                {
+                  spent: spent_budget,
+                  remaining: remaining_budget,
+                }
+              );
+
+              res.status(200).json({
+                msg: "Expense Updated Successfully",
+              });
+            })
+            .catch((err) => {
+              res.status(500).json({
+                msg: "Internal Server Error",
+                err,
+              });
+            });
+        }
+      }
+    });
+  }
+};
 
 // ######## DEADLINES ##########
 const addDeadline = (req, res) => {
@@ -287,7 +689,7 @@ const getStatistics = (req, res) => {
     const bearer = bearerHeader.split(" ");
     const bearerToken = bearer[1];
 
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
       if (err) {
         res.status(403).json({
           msg: "Forbidden",
@@ -303,79 +705,22 @@ const getStatistics = (req, res) => {
             errorLog,
           });
         } else {
-          Statistics.find({ user_id: authData.userId })
-            .then((data) => {
-              res.status(200).json({
-                msg: "Statistics Fetched Successfully",
-                data,
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Something went wrong",
-              });
-            });
-        }
-      }
-    });
-  }
-};
-
-const addStatistics = (req, res) => {
-  const errorLog = [];
-  const { label_name, value } = req.body;
-
-  // validate bearer tokenn
-  const bearerHeader = req.headers["authorization"];
-  if (typeof bearerHeader === "undefined") {
-    res.status(401).json({
-      msg: "Unauthorized",
-    });
-  } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-
-        if (!label_name) {
-          errorLog.push("label_name is required");
-        }
-        if (!value) {
-          errorLog.push("value is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
-          });
-        } else {
-          const newStatistics = new Statistics({
+          //get user spent budget
+          const user = await UserData.findOne({
             user_id: authData.userId,
-            label_name,
-            value,
           });
-          newStatistics
-            .save()
-            .then((data) => {
-              res.status(200).json({
-                msg: "Statistics Added Successfully",
-                data,
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Something went wrong",
-              });
-            });
+
+          const userStates = await statistics.find({
+            user_id: authData.userId,
+          });
+
+          res.status(200).json({
+            msg: "Statistics Fetched Successfully",
+            data: {
+              spent_budget: user.spent,
+              statistics: userStates,
+            },
+          });
         }
       }
     });
@@ -420,6 +765,7 @@ const addSheets = (req, res) => {
             errorLog,
           });
         } else {
+          Do_Statistics(authData.userId);
           const newSheet = new Sheets({
             user_id: authData.userId,
             sheet_type,
@@ -595,6 +941,8 @@ const updateSheet = async (req, res) => {
 const addLabels = (req, res) => {
   const errorLog = [];
   const { label } = req.body;
+  // label always in lowercase
+  const label_name = label.toLowerCase();
 
   //validate bearer token
   const bearerHeader = req.headers["authorization"];
@@ -624,23 +972,33 @@ const addLabels = (req, res) => {
             errorLog,
           });
         } else {
+          Do_Statistics(authData.userId);
           const newLabel = new Labels({
             user_id: authData.userId,
-            label,
+            label: label_name,
           });
-          newLabel
-            .save()
-            .then((data) => {
-              res.status(200).json({
-                msg: "Label Added Successfully",
-                data,
+          // first check if this label found or not
+          Labels.findOne({ user_id: authData.userId, label }).then((data) => {
+            if (data) {
+              res.status(409).json({
+                msg: "Label already exists",
               });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Something went wrong",
-              });
-            });
+            } else {
+              newLabel
+                .save()
+                .then((data) => {
+                  res.status(200).json({
+                    msg: "Label Added Successfully",
+                    data,
+                  });
+                })
+                .catch((err) => {
+                  res.status(500).json({
+                    msg: "Something went wrong",
+                  });
+                });
+            }
+          });
         }
       }
     });
@@ -677,7 +1035,7 @@ const getLabels = (req, res) => {
           Labels.find({ user_id: authData.userId })
             .then((data) => {
               res.status(200).json({
-                msg: "Labels Fetched Successfully",
+                msg: "Labels Fetched Successfullyy",
                 data,
               });
             })
@@ -742,8 +1100,7 @@ const deleteLabels = (req, res) => {
 // ######## USERDATA #########
 const update_user_data = async (req, res) => {
   const errorLog = [];
-
-  const { spent, total } = req.body;
+  const { spent } = req.body;
 
   //validate bearer token
   const bearerHeader = req.headers["authorization"];
@@ -777,6 +1134,11 @@ const update_user_data = async (req, res) => {
             errorLog,
           });
         } else {
+          //get user total budget from the usre data
+          const total = await User.findOne({
+            user_id: authData.userId,
+          }).select("budget");
+
           const response = await UserData.findOneAndUpdate(
             { user_id: authData.userId },
             {
@@ -858,10 +1220,15 @@ module.exports = {
   deleteSheets,
   updateSheet,
   getStatistics,
-  addStatistics,
   addDeadline,
   getDeadlines,
   deleteDeadline,
   updateDeadline,
   getOneDeadLine,
+  getExpenses,
+  addExpenses,
+  deleteExpense,
+  updateExpense,
+  getProfileData,
+  updateProfileData,
 };
