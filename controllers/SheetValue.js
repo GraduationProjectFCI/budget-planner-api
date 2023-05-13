@@ -8,8 +8,10 @@ const SheetValue = async (sheet_id) => {
     value += expense.value;
   });
 
-  sheet.value = value;
-  await sheet.save();
+  if (expenses.length > 0) {
+    sheet.value = value;
+    await sheet.save();
+  }
 };
 
 module.exports = SheetValue;

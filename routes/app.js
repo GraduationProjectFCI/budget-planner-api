@@ -28,19 +28,11 @@ const expenses = require("../models/expenses");
 
 //added to the gateway servicee
 router.route("/user-data").get(get_user_data);
-
-//not added
-router.route("/labels").post(addLabels).get(getLabels);
-router.route("/labels/:label_id").delete(deleteLabels);
-
-//add sheet
-//delete sheet
 router.route("/sheets").get(getSheets).post(addSheets);
 
 router
   .route("/sheets/:sheet_id")
   .delete(deleteSheets)
-  .patch(updateSheet)
   .post(addExpenses)
   .get(getExpenses);
 
@@ -48,6 +40,13 @@ router
   .route("/sheets/:sheet_id/:expense_id")
   .delete(deleteExpense)
   .patch(updateExpense);
+
+//not added
+router.route("/labels").post(addLabels).get(getLabels);
+router.route("/labels/:label_id").delete(deleteLabels);
+
+//add sheet
+//delete sheet
 
 router.route("/statistics").get(getStatistics);
 

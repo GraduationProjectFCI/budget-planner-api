@@ -1126,7 +1126,7 @@ const get_user_data = (req, res) => {
             errorLog,
           });
         } else {
-          UserData.find({ user_id: authData.userId })
+          UserData.findOne({ user_id: authData.userId })
             .then((data) => {
               res.status(200).json({
                 msg: "User Data Fetched Successfully",
