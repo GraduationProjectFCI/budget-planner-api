@@ -189,7 +189,20 @@ const login = async (req, res) => {
     }
 
     //if email is registered
-    if (user) {
+    if (!user) {
+      errorlog.push("user not found");
+    } else {
+      //check if user is active
+      if (!user.active) {
+        errorlog.push("Please activate your account");
+      }
+    }
+
+    if (errorlog.length) {
+      res.status(400).json({
+        msg: errorlog,
+      });
+    } else {
       //check if password is correct
       const isPasswordMatch = await user.comparePassword(password);
       //if password is not correct
@@ -208,11 +221,6 @@ const login = async (req, res) => {
         });
       }
     }
-  }
-  if (errorlog.length) {
-    res.status(400).json({
-      msg: errorlog,
-    });
   }
 };
 
