@@ -68,6 +68,11 @@ const register = async (req, res) => {
     if (!email) {
       errorlist.push("email must be provided");
     } else {
+      //check if email is registered
+      if (await User.findOne({ email: email })) {
+        errorlist.push("email is already registered");
+      }
+
       //check if email is a string
       if (!isNaN(email)) {
         errorlist.push("email must be a string");
@@ -132,13 +137,13 @@ const register = async (req, res) => {
       send_mail(RandomCode, req.body.email);
 
       const user = await User.create({
-        name: req.body.name,
-        email: req.body.email,
-        password: req.body.password,
-        gender: req.body.gender,
-        currency: req.body.currency,
-        budget: req.body.budget,
-        birthdate: req.body.birthdate,
+        name,
+        email,
+        password,
+        gender,
+        currency,
+        budget,
+        birthdate,
         image: "",
         account_age: today.toDateString(),
         active: false,
@@ -186,40 +191,39 @@ const login = async (req, res) => {
     //if email is not registered
     if (!user) {
       errorlog.push("user not found");
-    }
-
-    //if email is registered
-    if (!user) {
-      errorlog.push("user not found");
     } else {
-      //check if user is active
-      if (!user.active) {
-        errorlog.push("Please activate your account");
+      //if email is registered
+      //check if password is correct
+      const isPasswordMatch = await user.comparePassword(password);
+
+      //if password is not correct
+      if (!isPasswordMatch) {
+        errorlog.push("password is not correct");
+      } else {
+        //if password is correct
+        //check if user is active
+        if (!user.active) {
+          errorlog.push("user is not active");
+        } else {
+          //send the user data and token in the response
+          const token = user.createJWT(); //create token
+          res.status(200).json({
+            msg: "logged in successfully",
+            user: {
+              name: user.name,
+              user_id: user._id,
+            },
+            token,
+          });
+        }
       }
     }
 
+    //if there is an error
     if (errorlog.length) {
       res.status(400).json({
         msg: errorlog,
       });
-    } else {
-      //check if password is correct
-      const isPasswordMatch = await user.comparePassword(password);
-      //if password is not correct
-      if (!isPasswordMatch) {
-        errorlog.push("Wrong password");
-      } else {
-        //if password is correct
-        const token = user.createJWT(); //create token
-        res.status(200).json({
-          msg: "logged in successfully",
-          user: {
-            name: user.name,
-            user_id: user._id,
-          },
-          token,
-        });
-      }
     }
   }
 };
@@ -255,7 +259,7 @@ const confirmation = async (req, res) => {
     });
   } else {
     try {
-      const user = await User.findById({
+      const user = await User.findOne({
         _id: user_id,
       });
 
@@ -275,8 +279,7 @@ const confirmation = async (req, res) => {
             }
           );
           if (codeFound) {
-            user.active = true;
-            await user.save();
+            await User.findOneAndUpdate({ _id: user_id }, { active: true });
             code.used = true;
             await codeFound.save();
 
