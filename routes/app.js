@@ -41,21 +41,17 @@ router
   .delete(deleteExpense)
   .patch(updateExpense);
 
-//not added
-router.route("/labels").post(addLabels).get(getLabels);
-router.route("/labels/:label_id").delete(deleteLabels);
-
-//add sheet
-//delete sheet
-
-router.route("/statistics").get(getStatistics);
-
 router.route("/deadlines").post(addDeadline).get(getDeadlines);
 router
   .route("/deadlines/:deadline_id")
   .delete(deleteDeadline)
   .patch(updateDeadline)
   .get(getOneDeadLine);
+
+router.route("/labels").post(addLabels).get(getLabels);
+router.route("/labels/:label_id").delete(deleteLabels);
+
+router.route("/statistics").get(getStatistics);
 
 router.route("/profile").get(getProfileData).patch(updateProfileData);
 module.exports = router;

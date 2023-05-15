@@ -415,7 +415,8 @@ const updateExpense = (req, res) => {
 // ######## DEADLINES ##########
 const addDeadline = (req, res) => {
   const errorLog = [];
-  const { deadline_name, deadline_date, deadline_value } = req.body;
+  const { deadline_name, deadline_value } = req.body;
+  const deadline_date = new Date(req.body.deadline_date);
 
   // validate bearer token in the request headers
   const bearerHeader = req.headers["authorization"];
@@ -467,6 +468,7 @@ const addDeadline = (req, res) => {
               });
             })
             .catch((err) => {
+              // console.log(err);
               res.status(500).json({
                 msg: "Something went wrong",
               });

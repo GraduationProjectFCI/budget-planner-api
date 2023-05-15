@@ -127,6 +127,7 @@ const register = async (req, res) => {
         currency: req.body.currency,
         budget: req.body.budget,
         birthdate: req.body.birthdate,
+        image: "",
         account_age: today.toDateString(),
         active: false,
       });

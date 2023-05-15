@@ -6,11 +6,16 @@ const UserSchema = new mongoose.Schema({
   name: { type: String },
   email: { type: String },
   password: { type: String },
-  gender:{ type:String },
-  budget: { type:Number },
-  currency: { type:String },
-  birthdate: { type:Date },
-  account_age: { type:Date },
+  gender: { type: String },
+  budget: { type: Number },
+  currency: { type: String },
+  birthdate: { type: Date },
+  image: {
+    type: String,
+    default:
+      "https://res.cloudinary.com/dxk0bmtei/image/upload/v1606326666/default-user-image.png",
+  },
+  account_age: { type: Date },
   active: { type: Boolean },
 });
 

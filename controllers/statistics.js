@@ -4,7 +4,7 @@ const UserData = require("../models/user_data_modal");
 const statistics = require("../models/statesSchema");
 
 const Do_Statistics = async (user_id) => {
-  //delete the old statistics
+  //delete the old statistics if found
   await statistics.deleteMany({ user_id: user_id });
 
   //User Total Budget
@@ -17,7 +17,6 @@ const Do_Statistics = async (user_id) => {
   labels.map((label) => {
     if (!userLabels.includes(label.label)) userLabels.push(label.label);
   });
-
   // get user expenses
   userLabels.map(async (label) => {
     //food --> 400
