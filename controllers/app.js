@@ -645,7 +645,6 @@ const getStatistics = (req, res) => {
         if (errorLog.length > 0) {
           res.status(400).json({
             msg: "Bad Request",
-            errorLog,
           });
         } else {
           //get user spent budget

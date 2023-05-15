@@ -272,6 +272,16 @@ const confirmation = async (req, res) => {
             code.used = true;
             await codeFound.save();
 
+            const userData = new UserData({
+              user_id: user._id,
+              name: user.name,
+              total: user.budget,
+              spent: 0,
+              remaining: user.budget,
+            });
+
+            await userData.save();
+
             //create a token for user
             const token = user.createJWT();
 
