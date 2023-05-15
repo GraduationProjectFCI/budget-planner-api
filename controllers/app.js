@@ -155,7 +155,7 @@ const addExpenses = (req, res) => {
           });
           await newExpense.save();
           await SheetValue(sheet_id);
-          await UpdateUserData(authData.userId, value, "add", 0);
+          await UpdateUserData(authData.userId, value, "add", sheet_id);
           await Do_Statistics(authData.userId);
 
           res.status(200).json({
@@ -257,7 +257,12 @@ const deleteExpense = (req, res) => {
               msg: "Expense does not exist",
             });
           } else {
-            await UpdateUserData(authData.userId, expense.value, "delete");
+            await UpdateUserData(
+              authData.userId,
+              expense.value,
+              "delete",
+              sheet_id
+            );
             // delete expense
             await expense
               .deleteOne({
@@ -324,7 +329,13 @@ const updateExpense = (req, res) => {
             });
           }
           await SheetValue(sheet_id);
-          await UpdateUserData(authData.userId, value, "update", expense.value);
+          await UpdateUserData(
+            authData.userId,
+            value,
+            "update",
+            sheet_id,
+            expense.value
+          );
           await Do_Statistics(authData.userId);
 
           expense.value = value;
