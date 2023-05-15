@@ -224,7 +224,7 @@ const confirmation = async (req, res) => {
   );
 
   //check if the code is correct
-  if (code_created.code == code) {
+  if (code_created.code === code) {
     //create token
     const user = await User.findOne({ _id: req.body.user_id });
 

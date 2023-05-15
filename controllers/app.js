@@ -6,8 +6,8 @@ const Expenses = require("../models/expenses");
 const User = require("../models/user");
 const statistics = require("../models/statesSchema");
 const SheetValue = require("./SheetValue");
-
 const Do_Statistics = require("./statistics");
+const UpdateUserData = require("./updateUserData");
 
 const jwt = require("jsonwebtoken");
 
@@ -112,6 +112,7 @@ const addExpenses = (req, res) => {
   const { sheet_id } = req.params;
   const errorLog = [];
   const { value, label, description } = req.body;
+
   // validate bearer token in the request headers
   const bearerHeader = req.headers["authorization"];
   if (typeof bearerHeader === "undefined") {
@@ -130,74 +131,37 @@ const addExpenses = (req, res) => {
         if (!authData.userId) {
           errorLog.push("user_id is required");
         }
-
+        if (!sheet_id) {
+          errorLog.push("sheet_id is required");
+        }
         if (!value) {
           errorLog.push("value is required");
         }
         if (!label) {
           errorLog.push("label is required");
         }
-
         if (errorLog.length > 0) {
           res.status(400).json({
             msg: "Bad Request",
             errorLog,
           });
         } else {
-          const userLabels = [];
-
-          //get user labels
-          const labels = await Labels.find({ user_id: authData.userId });
-          labels.map((label) => {
-            userLabels.push(label.label);
+          const newExpense = new Expenses({
+            user_id: authData.userId,
+            sheet_id,
+            value,
+            label,
+            description,
           });
+          await newExpense.save();
+          await SheetValue(sheet_id);
+          await UpdateUserData(authData.userId, value, "add", 0);
+          await Do_Statistics(authData.userId);
 
-          //check if label is in user labels
-          if (!userLabels.includes(label)) {
-            res.status(400).json({
-              msg: "Label does not exist",
-            });
-          } else {
-            const newExpense = new Expenses({
-              sheet_id,
-              value,
-              label,
-              description,
-            });
-            newExpense
-              .save()
-              .then(async (data) => {
-                Do_Statistics(authData.userId);
-                SheetValue(sheet_id);
-                const user_data = await UserData.findOne({
-                  user_id: authData.userId,
-                });
-
-                const spent_budget = user_data.spent + value;
-                const remaining_budget = user_data.total - spent_budget;
-
-                await UserData.findOneAndUpdate(
-                  {
-                    user_id: authData.userId,
-                  },
-                  {
-                    spent: spent_budget,
-                    remaining: remaining_budget,
-                  }
-                );
-
-                res.status(200).json({
-                  msg: "Expense Added Successfully",
-                  data,
-                });
-              })
-              .catch((err) => {
-                res.status(500).json({
-                  msg: "Internal Server Error",
-                  err,
-                });
-              });
-          }
+          res.status(200).json({
+            msg: "Expense Added Successfully",
+            newExpense,
+          });
         }
       }
     });
@@ -207,6 +171,7 @@ const addExpenses = (req, res) => {
 const getExpenses = (req, res) => {
   const errorLog = [];
   const { label } = req.body;
+  const { sheet_id } = req.params;
   // validate bearer token in the request headers
   const bearerHeader = req.headers["authorization"];
   if (typeof bearerHeader === "undefined") {
@@ -216,43 +181,41 @@ const getExpenses = (req, res) => {
   } else {
     const bearer = bearerHeader.split(" ");
     const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
       if (err) {
         res.status(403).json({
           msg: "Forbidden",
         });
       } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
         if (label) {
-          Expenses.find({ user_id: authData.userId, label })
-            .then((data) => {
-              res.status(200).json({
-                msg: "Expenses Fetched Successfully",
-                data,
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Internal Server Error",
-                err,
-              });
+          const expenses = await Expenses.find({
+            sheet_id,
+            label,
+          });
+          if (expenses.length > 0) {
+            res.status(200).json({
+              msg: "Expenses Fetched Successfully",
+              expenses,
             });
+          } else {
+            res.status(404).json({
+              msg: "No Expenses Found",
+            });
+          }
         } else {
-          Expenses.find({ user_id: authData.userId })
-            .then((data) => {
-              res.status(200).json({
-                msg: "Expenses Fetched Successfully",
-                data,
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Internal Server Error",
-                err,
-              });
+          const expenses = await Expenses.find({
+            sheet_id,
+          });
+          if (expenses.length > 0) {
+            res.status(200).json({
+              msg: "Expenses Fetched Successfully",
+              expenses,
             });
+          } else {
+            res.status(404).json({
+              msg: "No Expenses Found",
+            });
+          }
         }
       }
     });
@@ -286,10 +249,6 @@ const deleteExpense = (req, res) => {
             errorLog,
           });
         } else {
-          const user_data = await UserData.findOne({
-            user_id: authData.userId,
-          });
-
           const expense = await Expenses.findOne({
             _id: expense_id,
           });
@@ -298,20 +257,7 @@ const deleteExpense = (req, res) => {
               msg: "Expense does not exist",
             });
           } else {
-            const spent_budget = user_data.spent - expense.value;
-            const remaining_budget = user_data.total - spent_budget;
-
-            // update userData
-            await UserData.findOneAndUpdate(
-              {
-                user_id: authData.userId,
-              },
-              {
-                spent: spent_budget,
-                remaining: remaining_budget,
-              }
-            );
-
+            await UpdateUserData(authData.userId, expense.value, "delete");
             // delete expense
             await expense
               .deleteOne({
@@ -368,44 +314,24 @@ const updateExpense = (req, res) => {
             errorLog,
           });
         } else {
-          const user_data = await UserData.findOne({
-            user_id: authData.userId,
+          const expense = await Expenses.findOne({
+            _id: expense_id,
           });
 
-          const expense = await Expenses.findOne({ _id: expense_id });
-
-          await expense
-            .updateOne({
-              value,
-              label,
-              description,
-            })
-            .then(async (data) => {
-              Do_Statistics(authData.userId);
-              SheetValue(sheet_id);
-
-              const spent_budget = user_data.spent + (value - expense.value);
-              const remaining_budget = user_data.total - spent_budget;
-              await UserData.findOneAndUpdate(
-                {
-                  user_id: authData.userId,
-                },
-                {
-                  spent: spent_budget,
-                  remaining: remaining_budget,
-                }
-              );
-
-              res.status(200).json({
-                msg: "Expense Updated Successfully",
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Internal Server Error",
-                err,
-              });
+          if (!expense) {
+            res.status(400).json({
+              msg: "Expense does not exist",
             });
+          }
+          await SheetValue(sheet_id);
+          await UpdateUserData(authData.userId, value, "update", expense.value);
+          await Do_Statistics(authData.userId);
+
+          expense.value = value;
+          res.status(200).json({
+            msg: "Expense Updated Successfully",
+            expense,
+          });
         }
       }
     });
@@ -767,7 +693,6 @@ const addSheets = (req, res) => {
             errorLog,
           });
         } else {
-          Do_Statistics(authData.userId);
           const newSheet = new Sheets({
             user_id: authData.userId,
             sheet_type,
