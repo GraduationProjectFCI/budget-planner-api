@@ -24,6 +24,8 @@ const register = async (req, res) => {
   const { name, currency, birthdate, email, password, gender, budget } =
     req.body;
 
+  const gender_var = gender.toLowerCase();
+
   var errorlist = [];
 
   try {
@@ -140,7 +142,7 @@ const register = async (req, res) => {
         name,
         email,
         password,
-        gender,
+        gender: gender_var,
         currency,
         budget,
         birthdate,
