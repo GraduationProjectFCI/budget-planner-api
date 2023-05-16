@@ -902,8 +902,6 @@ const addLabels = (req, res) => {
           errorLog.push("label is required");
         }
 
-        const label_name = label.toLowerCase();
-
         if (errorLog.length > 0) {
           res.status(400).json({
             msg: "Bad Request",
@@ -913,7 +911,7 @@ const addLabels = (req, res) => {
           Do_Statistics(authData.userId);
           const newLabel = new Labels({
             user_id: authData.userId,
-            label: label_name,
+            label: label.toLowerCase(),
           });
           // first check if this label found or not
           Labels.findOne({ user_id: authData.userId, label }).then((data) => {
