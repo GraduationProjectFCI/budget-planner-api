@@ -88,7 +88,6 @@ const register = async (req, res) => {
       errorlist.push("gender must be provided");
     }
 
-    const gender_var = gender.toLowerCase();
     ////////BUDGET VALIDATION////////
     //check if budget found
     if (!budget) {
@@ -141,7 +140,7 @@ const register = async (req, res) => {
         name,
         email,
         password,
-        gender: gender_var,
+        gender: gender.toLowerCase(),
         currency,
         budget,
         birthdate,
