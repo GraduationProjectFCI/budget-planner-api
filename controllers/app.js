@@ -879,7 +879,6 @@ const addLabels = (req, res) => {
   const errorLog = [];
   const { label } = req.body;
   // label always in lowercase
-  const label_name = label.toLowerCase();
 
   //validate bearer token
   const bearerHeader = req.headers["authorization"];
@@ -902,6 +901,8 @@ const addLabels = (req, res) => {
         if (!label) {
           errorLog.push("label is required");
         }
+
+        const label_name = label.toLowerCase();
 
         if (errorLog.length > 0) {
           res.status(400).json({
