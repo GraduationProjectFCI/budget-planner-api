@@ -5,11 +5,220 @@ const Deadlines = require("../models/deadlineSchema");
 const Expenses = require("../models/expenses");
 const User = require("../models/user");
 const statistics = require("../models/statesSchema");
+const Limit = require("../models/LimitSchema");
 const SheetValue = require("./SheetValue");
 const Do_Statistics = require("./statistics");
 const UpdateUserData = require("./updateUserData");
 
 const jwt = require("jsonwebtoken");
+
+// ######## Limits ##########
+const deleteLimit = (req, res) => {
+  const errorLog = [];
+
+  const { limit_id } = req.params;
+  // validate bearer token in the request headers
+  const bearerHeader = req.headers["authorization"];
+  if (typeof bearerHeader === "undefined") {
+    res.status(401).json({
+      msg: "Unauthorized",
+    });
+  } else {
+    const bearer = bearerHeader.split(" ");
+    const bearerToken = bearer[1];
+    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+      if (err) {
+        res.status(403).json({
+          msg: "Forbidden",
+        });
+      } else {
+        if (!authData.userId) {
+          errorLog.push("user_id is required");
+        }
+
+        if (!limit_id) {
+          errorLog.push("limit_id is required");
+        }
+
+        if (errorLog.length > 0) {
+          res.status(400).json({
+            msg: "Bad Request",
+            errorLog,
+          });
+        } else {
+          const deletedLimit = await Limit.findOneAndDelete({
+            user_id: authData.userId,
+          });
+          res.status(200).json({
+            msg: "Limit Deleted Successfully",
+            deletedLimit,
+          });
+        }
+      }
+    });
+  }
+};
+
+const updateLimit = (req, res) => {
+  const errorLog = [];
+  const { limit } = req.body;
+  // validate bearer token in the request headers
+  const bearerHeader = req.headers["authorization"];
+  if (typeof bearerHeader === "undefined") {
+    res.status(401).json({
+      msg: "Unauthorized",
+    });
+  } else {
+    const bearer = bearerHeader.split(" ");
+    const bearerToken = bearer[1];
+    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+      if (err) {
+        res.status(403).json({
+          msg: "Forbidden",
+        });
+      } else {
+        if (!authData.userId) {
+          errorLog.push("user_id is required");
+        }
+        if (!limit) {
+          errorLog.push("limit value is required");
+        }
+
+        //check if label found in the user labels
+        const userLabels = await Labels.findOne({
+          user_id: authData.userId,
+        });
+
+        if (!userLabels.label.includes(label)) {
+          errorLog.push("label not found");
+        }
+
+        if (errorLog.length > 0) {
+          res.status(400).json({
+            msg: "Bad Request",
+            errorLog,
+          });
+        } else {
+          const updatedLimit = await Limit.findOneAndUpdate(
+            {
+              user_id: authData.userId,
+            },
+            {
+              limit,
+            },
+            {
+              new: true,
+            }
+          );
+          res.status(200).json({
+            msg: "Limit Updated Successfully",
+            updatedLimit,
+          });
+        }
+      }
+    });
+  }
+};
+
+const getLimits = (req, res) => {
+  const errorLog = [];
+  // validate bearer token in the request headers
+  const bearerHeader = req.headers["authorization"];
+  if (typeof bearerHeader === "undefined") {
+    res.status(401).json({
+      msg: "Unauthorized",
+    });
+  } else {
+    const bearer = bearerHeader.split(" ");
+    const bearerToken = bearer[1];
+    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+      if (err) {
+        res.status(403).json({
+          msg: "Forbidden",
+        });
+      } else {
+        if (!authData.userId) {
+          errorLog.push("user_id is required");
+        }
+
+        if (errorLog.length > 0) {
+          res.status(400).json({
+            msg: "Bad Request",
+            errorLog,
+          });
+        } else {
+          const limits = await Limit.find({
+            user_id: authData.userId,
+          });
+          res.status(200).json({
+            msg: "success",
+            limits,
+          });
+        }
+      }
+    });
+  }
+};
+
+const addLimit = (req, res) => {
+  const errorLog = [];
+  const { label, limit } = req.body;
+  // validate bearer token in the request headers
+  const bearerHeader = req.headers["authorization"];
+  if (typeof bearerHeader === "undefined") {
+    res.status(401).json({
+      msg: "Unauthorized",
+    });
+  } else {
+    const bearer = bearerHeader.split(" ");
+    const bearerToken = bearer[1];
+    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+      if (err) {
+        res.status(403).json({
+          msg: "Forbidden",
+        });
+      } else {
+        if (!authData.userId) {
+          errorLog.push("user_id is required");
+        }
+        if (!label) {
+          errorLog.push("label is required");
+        }
+        if (!limit) {
+          errorLog.push("limit value is required");
+        }
+
+        //check if label found in the user labels
+        const userLabels = await Labels.findOne({
+          user_id: authData.userId,
+        });
+
+        if (!userLabels.label.includes(label)) {
+          errorLog.push("label not found");
+        }
+
+        if (errorLog.length > 0) {
+          res.status(400).json({
+            msg: "Bad Request",
+            errorLog,
+          });
+        } else {
+          const newLimit = new Limit({
+            user_id: authData.userId,
+            label,
+            limit,
+          });
+          await newLimit.save();
+
+          res.status(200).json({
+            msg: "Limit Added Successfully",
+            newLimit,
+          });
+        }
+      }
+    });
+  }
+};
 
 // ######## USER Profile ##########
 const getProfileData = (req, res) => {
@@ -1129,4 +1338,8 @@ module.exports = {
   updateExpense,
   getProfileData,
   updateProfileData,
+  addLimit,
+  getLimits,
+  updateLimit,
+  deleteLimit,
 };
