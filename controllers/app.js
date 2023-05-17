@@ -339,6 +339,10 @@ const updateExpense = (req, res) => {
           await Do_Statistics(authData.userId);
 
           expense.value = value;
+          expense.description = description;
+          expense.label = label;
+          await expense.save();
+
           res.status(200).json({
             msg: "Expense Updated Successfully",
             expense,
