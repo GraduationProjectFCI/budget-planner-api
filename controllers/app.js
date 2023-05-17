@@ -140,6 +140,16 @@ const addExpenses = (req, res) => {
         if (!label) {
           errorLog.push("label is required");
         }
+
+        //check if label found in the user labels
+        const userLabels = await Labels.findOne({
+          user_id: authData.userId,
+        });
+
+        if (!userLabels.label.includes(label)) {
+          errorLog.push("label not found");
+        }
+
         if (errorLog.length > 0) {
           res.status(400).json({
             msg: "Bad Request",
@@ -309,10 +319,16 @@ const updateExpense = (req, res) => {
         }
         if (!label) {
           errorLog.push("label is required");
+        } else {
+          const userLabels = await Labels.findOne({
+            user_id: authData.userId,
+          });
+
+          if (!userLabels.label.includes(label)) {
+            errorLog.push("label not found");
+          }
         }
-        if (!description) {
-          errorLog.push("description is required");
-        }
+
         if (errorLog.length > 0) {
           res.status(400).json({
             msg: "Bad Request",
@@ -328,7 +344,7 @@ const updateExpense = (req, res) => {
               msg: "Expense does not exist",
             });
           }
-          await SheetValue(sheet_id);
+
           await UpdateUserData(
             authData.userId,
             value,
@@ -338,10 +354,18 @@ const updateExpense = (req, res) => {
           );
           await Do_Statistics(authData.userId);
 
-          expense.value = value;
-          expense.description = description;
-          expense.label = label;
-          await expense.save();
+          await Expenses.findOneAndUpdate(
+            {
+              _id: expense_id,
+            },
+            {
+              value,
+              label,
+              description,
+            }
+          ).then(() => {
+            SheetValue(sheet_id);
+          });
 
           res.status(200).json({
             msg: "Expense Updated Successfully",
