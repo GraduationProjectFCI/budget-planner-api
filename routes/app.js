@@ -6,10 +6,10 @@ const {
   get_user_data,
   addLabels,
   getLabels,
-  deleteLabels,
+  deleteLabel,
   getSheets,
   addSheets,
-  deleteSheets,
+  deleteSheet,
   updateSheet,
   getStatistics,
   addDeadline,
@@ -23,6 +23,10 @@ const {
   updateExpense,
   getProfileData,
   updateProfileData,
+  addLimit,
+  getLimits,
+  deleteLimit,
+  updateLimit,
 } = require("../controllers/app");
 const expenses = require("../models/expenses");
 
@@ -32,7 +36,7 @@ router.route("/sheets").get(getSheets).post(addSheets);
 
 router
   .route("/sheets/:sheet_id")
-  .delete(deleteSheets)
+  .delete(deleteSheet)
   .post(addExpenses)
   .get(getExpenses);
 
@@ -49,9 +53,13 @@ router
   .get(getOneDeadLine);
 
 router.route("/labels").post(addLabels).get(getLabels);
-router.route("/labels/:label_id").delete(deleteLabels);
+router.route("/labels/:label_id").delete(deleteLabel);
 
 router.route("/statistics").get(getStatistics);
 
 router.route("/profile").get(getProfileData).patch(updateProfileData);
+
+router.route("/limits").post(addLimit).get(getLimits);
+router.route("/limits/:limit_id").delete(deleteLimit).patch(updateLimit);
+
 module.exports = router;

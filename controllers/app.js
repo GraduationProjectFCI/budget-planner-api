@@ -10,6 +10,8 @@ const SheetValue = require("./SheetValue");
 const Do_Statistics = require("./statistics");
 const UpdateUserData = require("./updateUserData");
 
+const mongoose = require("mongoose");
+
 const jwt = require("jsonwebtoken");
 
 // ######## Limits ##########
@@ -40,6 +42,11 @@ const deleteLimit = (req, res) => {
           errorLog.push("limit_id is required");
         }
 
+        //check if id passed in the params is valid for the mongo
+        if (!mongoose.Types.ObjectId.isValid(limit_id)) {
+          errorLog.push("limit_id is not valid");
+        }
+
         if (errorLog.length > 0) {
           res.status(400).json({
             msg: "Bad Request",
@@ -47,7 +54,7 @@ const deleteLimit = (req, res) => {
           });
         } else {
           const deletedLimit = await Limit.findOneAndDelete({
-            user_id: authData.userId,
+            _id: limit_id,
           });
           res.status(200).json({
             msg: "Limit Deleted Successfully",
@@ -61,6 +68,8 @@ const deleteLimit = (req, res) => {
 
 const updateLimit = (req, res) => {
   const errorLog = [];
+
+  const { limit_id } = req.params;
   const { limit } = req.body;
   // validate bearer token in the request headers
   const bearerHeader = req.headers["authorization"];
@@ -80,17 +89,25 @@ const updateLimit = (req, res) => {
         if (!authData.userId) {
           errorLog.push("user_id is required");
         }
-        if (!limit) {
-          errorLog.push("limit value is required");
+
+        //check if id passed in the params is valid for the mongo
+        if (!mongoose.Types.ObjectId.isValid(limit_id)) {
+          errorLog.push("limit_id is not valid");
         }
 
-        //check if label found in the user labels
-        const userLabels = await Labels.findOne({
-          user_id: authData.userId,
-        });
+        if (!limit_id) {
+          errorLog.push("limit_id is required");
+        } else {
+          const limit = await Limit.findOne({
+            _id: limit_id,
+          });
+          if (!limit) {
+            errorLog.push("limit_id is not valid");
+          }
+        }
 
-        if (!userLabels.label.includes(label)) {
-          errorLog.push("label not found");
+        if (!limit) {
+          errorLog.push("limit value is required");
         }
 
         if (errorLog.length > 0) {
@@ -101,7 +118,7 @@ const updateLimit = (req, res) => {
         } else {
           const updatedLimit = await Limit.findOneAndUpdate(
             {
-              user_id: authData.userId,
+              _id: limit_id,
             },
             {
               limit,
@@ -183,18 +200,31 @@ const addLimit = (req, res) => {
         }
         if (!label) {
           errorLog.push("label is required");
+        } else {
+          //check if label found in the user labels
+          const userLabels = await Labels.findOne({
+            user_id: authData.userId,
+            label,
+          });
+          if (userLabels) {
+            if (!userLabels.label.includes(label)) {
+              errorLog.push("label not found");
+            }
+          } else {
+            errorLog.push("label not found");
+          }
         }
         if (!limit) {
           errorLog.push("limit value is required");
         }
-
-        //check if label found in the user labels
-        const userLabels = await Labels.findOne({
+        //check if limit found
+        const userLimit = await Limit.findOne({
           user_id: authData.userId,
+          label,
         });
 
-        if (!userLabels.label.includes(label)) {
-          errorLog.push("label not found");
+        if (userLimit) {
+          errorLog.push("limit already exists");
         }
 
         if (errorLog.length > 0) {
@@ -459,9 +489,24 @@ const deleteExpense = (req, res) => {
           msg: "Forbidden",
         });
       } else {
+        if (!sheet_id) {
+          errorLog.push("sheet_id is required");
+        }
+
+        //check if id passed in the params is valid for the mongo
+        if (!mongoose.Types.ObjectId.isValid(sheet_id)) {
+          errorLog.push("sheet_id is not valid");
+        }
+
         if (!expense_id) {
           errorLog.push("expense_id is required");
         }
+
+        //check if id passed in the params is valid for the mongo
+        if (!mongoose.Types.ObjectId.isValid(expense_id)) {
+          errorLog.push("expense_id is not valid");
+        }
+
         if (errorLog.length > 0) {
           res.status(400).json({
             msg: "Bad Request",
@@ -520,9 +565,23 @@ const updateExpense = (req, res) => {
           msg: "Forbidden",
         });
       } else {
+        if (!sheet_id) {
+          errorLog.push("sheet_id is required");
+        }
+
+        //check if id passed in the params is valid for the mongo
+        if (!mongoose.Types.ObjectId.isValid(sheet_id)) {
+          errorLog.push("sheet_id is not valid");
+        }
         if (!expense_id) {
           errorLog.push("expense_id is required");
         }
+
+        //check if id passed in the params is valid for the mongo
+        if (!mongoose.Types.ObjectId.isValid(expense_id)) {
+          errorLog.push("expense_id is not valid");
+        }
+
         if (!value) {
           errorLog.push("value is required");
         }
@@ -676,6 +735,11 @@ const getOneDeadLine = (req, res) => {
           errorLog.push("deadline_id is required");
         }
 
+        //check if id passed in the params is valid for the mongo
+        if (!mongoose.Types.ObjectId.isValid(deadline_id)) {
+          errorLog.push("deadline_id is not valid");
+        }
+
         if (errorLog.length > 0) {
           res.status(400).json({
             msg: "Bad Request",
@@ -771,6 +835,12 @@ const updateDeadline = (req, res) => {
         if (!deadline_id) {
           errorLog.push("deadline_id is required");
         }
+
+        //check if id passed in the params is valid for the mongo
+        if (!mongoose.Types.ObjectId.isValid(deadline_id)) {
+          errorLog.push("deadline_id is not valid");
+        }
+
         if (!deadline_name) {
           errorLog.push("deadline_name is required");
         }
@@ -829,6 +899,11 @@ const deleteDeadline = (req, res) => {
       } else {
         if (!deadline_id) {
           errorLog.push("deadline_id is required");
+        }
+
+        //check if id passed in the params is valid for the mongo
+        if (!mongoose.Types.ObjectId.isValid(deadline_id)) {
+          errorLog.push("deadline_id is not valid");
         }
 
         if (errorLog.length > 0) {
@@ -1010,7 +1085,7 @@ const getSheets = (req, res) => {
   }
 };
 
-const deleteSheets = (req, res) => {
+const deleteSheet = (req, res) => {
   const errorLog = [];
   const { sheet_id } = req.params;
 
@@ -1031,6 +1106,11 @@ const deleteSheets = (req, res) => {
       } else {
         if (!sheet_id) {
           errorLog.push("sheet_id is required");
+        }
+
+        //check if id passed in the params is valid for the mongo
+        if (!mongoose.Types.ObjectId.isValid(sheet_id)) {
+          errorLog.push("sheet_id is not valid");
         }
 
         if (errorLog.length > 0) {
@@ -1082,6 +1162,12 @@ const updateSheet = async (req, res) => {
         if (!sheet_id) {
           errorLog.push("sheet_id is required");
         }
+
+        //check if id passed in the params is valid for the mongo
+        if (!mongoose.Types.ObjectId.isValid(sheet_id)) {
+          errorLog.push("sheet_id is not valid");
+        }
+
         if (!sheet_type) {
           errorLog.push("sheet_type is required");
         }
@@ -1223,7 +1309,7 @@ const getLabels = (req, res) => {
   }
 };
 
-const deleteLabels = (req, res) => {
+const deleteLabel = (req, res) => {
   const errorLog = [];
   const { label_id } = req.params;
 
@@ -1321,10 +1407,10 @@ module.exports = {
   get_user_data,
   addLabels,
   getLabels,
-  deleteLabels,
+  deleteLabel,
   getSheets,
   addSheets,
-  deleteSheets,
+  deleteSheet,
   updateSheet,
   getStatistics,
   addDeadline,
