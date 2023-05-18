@@ -207,7 +207,7 @@ const addLimit = (req, res) => {
             label,
           });
           if (userLabels) {
-            if (!userLabels.label.includes(label)) {
+            if (!userLabels.label === label) {
               errorLog.push("label not found");
             }
           } else {
@@ -283,7 +283,9 @@ const getProfileData = (req, res) => {
           })
             .select("-password")
             .select("-_id")
-            .select("-__v");
+            .select("-__v")
+            .select("-birthdate");
+
           res.status(200).json({
             msg: "success",
             userData,
@@ -295,6 +297,7 @@ const getProfileData = (req, res) => {
 };
 
 const updateProfileData = (req, res) => {
+  const { name, gender, budget, currnecy } = req.body;
   const errorLog = [];
   // validate bearer token in the request headers
   const bearerHeader = req.headers["authorization"];
@@ -314,13 +317,29 @@ const updateProfileData = (req, res) => {
         if (!authData.userId) {
           errorLog.push("user_id is required");
         }
+
+        if (!name) {
+          errorLog.push("name is required");
+        }
+
+        if (!gender) {
+          errorLog.push("gender is required");
+        }
+
+        if (!budget) {
+          errorLog.push("budget is required");
+        }
+
+        if (!currnecy) {
+          errorLog.push("currnecy is required");
+        }
+
         if (errorLog.length > 0) {
           res.status(400).json({
             msg: "Bad Request",
             errorLog,
           });
         } else {
-          const { name, gender, budget, currnecy, birthdate } = req.body;
           const userData = await User.findOneAndUpdate(
             {
               _id: authData.userId,
@@ -330,7 +349,6 @@ const updateProfileData = (req, res) => {
               gender,
               budget,
               currnecy,
-              birthdate,
             },
             {
               new: true,
@@ -385,7 +403,7 @@ const addExpenses = (req, res) => {
           user_id: authData.userId,
         });
 
-        if (!userLabels.label.includes(label)) {
+        if (!userLabels.label === label) {
           errorLog.push("label not found");
         }
 
@@ -592,7 +610,7 @@ const updateExpense = (req, res) => {
             user_id: authData.userId,
           });
 
-          if (!userLabels.label.includes(label)) {
+          if (!userLabels.label === label) {
             errorLog.push("label not found");
           }
         }
