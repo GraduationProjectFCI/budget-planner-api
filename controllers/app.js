@@ -1138,7 +1138,10 @@ const deleteSheet = (req, res) => {
           });
         } else {
           Sheets.findByIdAndDelete(sheet_id)
-            .then((data) => {
+            .then(async (data) => {
+              //delete all the expenses
+              await Expenses.deleteMany({ sheet_id: sheet_id });
+
               res.status(200).json({
                 msg: "Sheet Deleted Successfully",
                 data,
