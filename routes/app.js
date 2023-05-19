@@ -2,7 +2,6 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  update_user_data,
   get_user_data,
   addLabels,
   getLabels,
@@ -10,7 +9,6 @@ const {
   getSheets,
   addSheets,
   deleteSheet,
-  updateSheet,
   getStatistics,
   addDeadline,
   getDeadlines,
@@ -28,7 +26,6 @@ const {
   deleteLimit,
   updateLimit,
 } = require("../controllers/app");
-const expenses = require("../models/expenses");
 
 //added to the gateway servicee
 router.route("/user-data").get(get_user_data);

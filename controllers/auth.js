@@ -192,30 +192,36 @@ const login = async (req, res) => {
     if (!user) {
       errorlog.push("user not found");
     } else {
-      //if email is registered
-      //check if password is correct
-      const isPasswordMatch = await user.comparePassword(password);
+      try {
+        //if email is registered
+        //check if password is correct
+        const isPasswordMatch = await user.comparePassword(password);
 
-      //if password is not correct
-      if (!isPasswordMatch) {
-        errorlog.push("password is not correct");
-      } else {
-        //if password is correct
-        //check if user is active
-        if (!user.active) {
-          errorlog.push("user is not active");
+        //if password is not correct
+        if (!isPasswordMatch) {
+          errorlog.push("password is not correct");
         } else {
-          //send the user data and token in the response
-          const token = user.createJWT(); //create token
-          res.status(200).json({
-            msg: "logged in successfully",
-            user: {
-              name: user.name,
-              user_id: user._id,
-            },
-            token,
-          });
+          //if password is correct
+          //check if user is active
+          if (!user.active) {
+            errorlog.push("user is not active");
+          } else {
+            //send the user data and token in the response
+            const token = user.createJWT(); //create token
+            res.status(200).json({
+              msg: "logged in successfully",
+              user: {
+                name: user.name,
+                user_id: user._id,
+              },
+              token,
+            });
+          }
         }
+      } catch (error) {
+        res.status(500).json({
+          msg: error.message,
+        });
       }
     }
 
@@ -323,8 +329,80 @@ const confirmation = async (req, res) => {
   }
 };
 
+const forgetPassword = async (req, res) => {
+  const { email, password } = req.body;
+  const errorlist = [];
+
+  //check if email found
+  if (!email) {
+    errorlist.push("email must be provided");
+  } else {
+    //check if email is a string
+    if (!isNaN(email)) {
+      errorlist.push("email must be a string");
+    }
+
+    //check if email is registered
+    const user = await User.findOne({ email });
+    if (!user) {
+      errorlist.push("email is not registered");
+    }
+  }
+
+  //check if password found
+  if (!password) {
+    errorlist.push("password must be provided");
+  } else {
+    //Check if password contains special characters
+    var format = /[ `!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/;
+
+    if (!password) {
+      errorlist.push("password must be provided");
+    } else {
+      //check if password more than 8 characters
+      if (password.length < 8) {
+        errorlist.push("password must be more than 8 characters");
+      }
+      //check if password contains special characters
+      if (!format.test(password)) {
+        errorlist.push("password must contain special characters");
+      }
+      //check if password contains numbers
+      if (!/\d/.test(password)) {
+        errorlist.push("password must contain numbers");
+      }
+      //check if password contains uppercase letters
+      if (containsCapital(password) < 1) {
+        errorlist.push("password must contain uppercase letters");
+      }
+    }
+  }
+
+  //if there is no error
+  if (errorlist.length) {
+    res.status(400).json({
+      msg: errorlist,
+    });
+  } else {
+    //change password to user
+    try {
+      const user = await User.findOne({ email });
+      user.password = password;
+      await user.save();
+      res.status(200).json({
+        msg: "password changed successfully",
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: error.message,
+      });
+    }
+  }
+};
+
 module.exports = {
   register,
   login,
   confirmation,
+  forgetPassword,
 };

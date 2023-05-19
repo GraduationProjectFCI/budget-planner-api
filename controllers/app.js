@@ -26,43 +26,50 @@ const deleteLimit = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-
-        if (!limit_id) {
-          errorLog.push("limit_id is required");
-        }
-
-        //check if id passed in the params is valid for the mongo
-        if (!mongoose.Types.ObjectId.isValid(limit_id)) {
-          errorLog.push("limit_id is not valid");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          const deletedLimit = await Limit.findOneAndDelete({
-            _id: limit_id,
-          });
-          res.status(200).json({
-            msg: "Limit Deleted Successfully",
-            deletedLimit,
-          });
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
+
+          if (!limit_id) {
+            errorLog.push("limit_id is required");
+          }
+
+          //check if id passed in the params is valid for the mongo
+          if (!mongoose.Types.ObjectId.isValid(limit_id)) {
+            errorLog.push("limit_id is not valid");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
+            });
+          } else {
+            const deletedLimit = await Limit.findOneAndDelete({
+              _id: limit_id,
+            });
+            res.status(200).json({
+              msg: "Limit Deleted Successfully",
+              deletedLimit,
+            });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -78,62 +85,69 @@ const updateLimit = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-
-        //check if id passed in the params is valid for the mongo
-        if (!mongoose.Types.ObjectId.isValid(limit_id)) {
-          errorLog.push("limit_id is not valid");
-        }
-
-        if (!limit_id) {
-          errorLog.push("limit_id is required");
-        } else {
-          const limit = await Limit.findOne({
-            _id: limit_id,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
-          if (!limit) {
+        } else {
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
+
+          //check if id passed in the params is valid for the mongo
+          if (!mongoose.Types.ObjectId.isValid(limit_id)) {
             errorLog.push("limit_id is not valid");
           }
-        }
 
-        if (!limit) {
-          errorLog.push("limit value is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
-          });
-        } else {
-          const updatedLimit = await Limit.findOneAndUpdate(
-            {
+          if (!limit_id) {
+            errorLog.push("limit_id is required");
+          } else {
+            const limit = await Limit.findOne({
               _id: limit_id,
-            },
-            {
-              limit,
-            },
-            {
-              new: true,
+            });
+            if (!limit) {
+              errorLog.push("limit_id is not valid");
             }
-          );
-          res.status(200).json({
-            msg: "Limit Updated Successfully",
-            updatedLimit,
-          });
+          }
+
+          if (!limit) {
+            errorLog.push("limit value is required");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
+            });
+          } else {
+            const updatedLimit = await Limit.findOneAndUpdate(
+              {
+                _id: limit_id,
+              },
+              {
+                limit,
+              },
+              {
+                new: true,
+              }
+            );
+            res.status(200).json({
+              msg: "Limit Updated Successfully",
+              updatedLimit,
+            });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -146,34 +160,41 @@ const getLimits = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          const limits = await Limit.find({
-            user_id: authData.userId,
-          });
-          res.status(200).json({
-            msg: "success",
-            limits,
-          });
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
+            });
+          } else {
+            const limits = await Limit.find({
+              user_id: authData.userId,
+            });
+            res.status(200).json({
+              msg: "success",
+              limits,
+            });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -187,66 +208,73 @@ const addLimit = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-        if (!label) {
-          errorLog.push("label is required");
-        } else {
-          //check if label found in the user labels
-          const userLabels = await Labels.findOne({
-            user_id: authData.userId,
-            label,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
-          if (userLabels) {
-            if (!userLabels.label === label) {
+        } else {
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
+          if (!label) {
+            errorLog.push("label is required");
+          } else {
+            //check if label found in the user labels
+            const userLabels = await Labels.findOne({
+              user_id: authData.userId,
+              label,
+            });
+            if (userLabels) {
+              if (!userLabels.label === label) {
+                errorLog.push("label not found");
+              }
+            } else {
               errorLog.push("label not found");
             }
-          } else {
-            errorLog.push("label not found");
           }
-        }
-        if (!limit) {
-          errorLog.push("limit value is required");
-        }
-        //check if limit found
-        const userLimit = await Limit.findOne({
-          user_id: authData.userId,
-          label,
-        });
-
-        if (userLimit) {
-          errorLog.push("limit already exists");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
-          });
-        } else {
-          const newLimit = new Limit({
+          if (!limit) {
+            errorLog.push("limit value is required");
+          }
+          //check if limit found
+          const userLimit = await Limit.findOne({
             user_id: authData.userId,
             label,
-            limit,
           });
-          await newLimit.save();
 
-          res.status(200).json({
-            msg: "Limit Added Successfully",
-            newLimit,
-          });
+          if (userLimit) {
+            errorLog.push("limit already exists");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
+            });
+          } else {
+            const newLimit = new Limit({
+              user_id: authData.userId,
+              label,
+              limit,
+            });
+            await newLimit.save();
+
+            res.status(200).json({
+              msg: "Limit Added Successfully",
+              newLimit,
+            });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -260,39 +288,46 @@ const getProfileData = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          const userData = await User.findOne({
-            _id: authData.userId,
-          })
-            .select("-password")
-            .select("-_id")
-            .select("-__v")
-            .select("-birthdate");
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
 
-          res.status(200).json({
-            msg: "success",
-            userData,
-          });
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
+            });
+          } else {
+            const userData = await User.findOne({
+              _id: authData.userId,
+            })
+              .select("-password")
+              .select("-_id")
+              .select("-__v")
+              .select("-birthdate");
+
+            res.status(200).json({
+              msg: "success",
+              userData,
+            });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -306,61 +341,68 @@ const updateProfileData = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-
-        if (!name) {
-          errorLog.push("name is required");
-        }
-
-        if (!gender) {
-          errorLog.push("gender is required");
-        }
-
-        if (!budget) {
-          errorLog.push("budget is required");
-        }
-
-        if (!currnecy) {
-          errorLog.push("currnecy is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          const userData = await User.findOneAndUpdate(
-            {
-              _id: authData.userId,
-            },
-            {
-              name,
-              gender,
-              budget,
-              currnecy,
-            },
-            {
-              new: true,
-            }
-          );
-          res.status(200).json({
-            msg: "updated Successfully",
-            userData,
-          });
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
+
+          if (!name) {
+            errorLog.push("name is required");
+          }
+
+          if (!gender) {
+            errorLog.push("gender is required");
+          }
+
+          if (!budget) {
+            errorLog.push("budget is required");
+          }
+
+          if (!currnecy) {
+            errorLog.push("currnecy is required");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
+            });
+          } else {
+            const userData = await User.findOneAndUpdate(
+              {
+                _id: authData.userId,
+              },
+              {
+                name,
+                gender,
+                budget,
+                currnecy,
+              },
+              {
+                new: true,
+              }
+            );
+            res.status(200).json({
+              msg: "updated Successfully",
+              userData,
+            });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -377,61 +419,68 @@ const addExpenses = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-        if (!sheet_id) {
-          errorLog.push("sheet_id is required");
-        }
-        if (!value) {
-          errorLog.push("value is required");
-        }
-        if (!label) {
-          errorLog.push("label is required");
-        }
-
-        //check if label found in the user labels
-        const userLabels = await Labels.findOne({
-          user_id: authData.userId,
-        });
-
-        if (!userLabels.label === label) {
-          errorLog.push("label not found");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          const newExpense = new Expenses({
-            user_id: authData.userId,
-            sheet_id,
-            value,
-            label,
-            description,
-          });
-          await newExpense.save();
-          await SheetValue(sheet_id);
-          await UpdateUserData(authData.userId, value, "add", sheet_id);
-          await Do_Statistics(authData.userId);
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
+          if (!sheet_id) {
+            errorLog.push("sheet_id is required");
+          }
+          if (!value) {
+            errorLog.push("value is required");
+          }
+          if (!label) {
+            errorLog.push("label is required");
+          }
 
-          res.status(200).json({
-            msg: "Expense Added Successfully",
-            newExpense,
+          //check if label found in the user labels
+          const userLabels = await Labels.findOne({
+            user_id: authData.userId,
           });
+
+          if (!userLabels.label === label) {
+            errorLog.push("label not found");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
+            });
+          } else {
+            const newExpense = new Expenses({
+              user_id: authData.userId,
+              sheet_id,
+              value,
+              label,
+              description,
+            });
+            await newExpense.save();
+            await SheetValue(sheet_id);
+            await UpdateUserData(authData.userId, value, "add", sheet_id);
+            await Do_Statistics(authData.userId);
+
+            res.status(200).json({
+              msg: "Expense Added Successfully",
+              newExpense,
+            });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -446,46 +495,53 @@ const getExpenses = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (label) {
-          const expenses = await Expenses.find({
-            sheet_id,
-            label,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
-          if (expenses.length > 0) {
-            res.status(200).json({
-              msg: "Expenses Fetched Successfully",
-              expenses,
-            });
-          } else {
-            res.status(404).json({
-              msg: "No Expenses Found",
-            });
-          }
         } else {
-          const expenses = await Expenses.find({
-            sheet_id,
-          });
-          if (expenses.length > 0) {
-            res.status(200).json({
-              msg: "Expenses Fetched Successfully",
-              expenses,
+          if (label) {
+            const expenses = await Expenses.find({
+              sheet_id,
+              label,
             });
+            if (expenses.length > 0) {
+              res.status(200).json({
+                msg: "Expenses Fetched Successfully",
+                expenses,
+              });
+            } else {
+              res.status(404).json({
+                msg: "No Expenses Found",
+              });
+            }
           } else {
-            res.status(404).json({
-              msg: "No Expenses Found",
+            const expenses = await Expenses.find({
+              sheet_id,
             });
+            if (expenses.length > 0) {
+              res.status(200).json({
+                msg: "Expenses Fetched Successfully",
+                expenses,
+              });
+            } else {
+              res.status(404).json({
+                msg: "No Expenses Found",
+              });
+            }
           }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -499,68 +555,75 @@ const deleteExpense = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!sheet_id) {
-          errorLog.push("sheet_id is required");
-        }
-
-        //check if id passed in the params is valid for the mongo
-        if (!mongoose.Types.ObjectId.isValid(sheet_id)) {
-          errorLog.push("sheet_id is not valid");
-        }
-
-        if (!expense_id) {
-          errorLog.push("expense_id is required");
-        }
-
-        //check if id passed in the params is valid for the mongo
-        if (!mongoose.Types.ObjectId.isValid(expense_id)) {
-          errorLog.push("expense_id is not valid");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          const expense = await Expenses.findOne({
-            _id: expense_id,
-          });
-          if (!expense) {
+          if (!sheet_id) {
+            errorLog.push("sheet_id is required");
+          }
+
+          //check if id passed in the params is valid for the mongo
+          if (!mongoose.Types.ObjectId.isValid(sheet_id)) {
+            errorLog.push("sheet_id is not valid");
+          }
+
+          if (!expense_id) {
+            errorLog.push("expense_id is required");
+          }
+
+          //check if id passed in the params is valid for the mongo
+          if (!mongoose.Types.ObjectId.isValid(expense_id)) {
+            errorLog.push("expense_id is not valid");
+          }
+
+          if (errorLog.length > 0) {
             res.status(400).json({
-              msg: "Expense does not exist",
+              msg: "Bad Request",
+              errorLog,
             });
           } else {
-            await UpdateUserData(
-              authData.userId,
-              expense.value,
-              "delete",
-              sheet_id
-            );
-            // delete expense
-            await expense
-              .deleteOne({
-                _id: expense_id,
-              })
-              .then(() => {
-                Do_Statistics(authData.userId);
-                SheetValue(sheet_id);
-                res.status(200).json({
-                  msg: "Expense Deleted Successfully",
-                });
+            const expense = await Expenses.findOne({
+              _id: expense_id,
+            });
+            if (!expense) {
+              res.status(400).json({
+                msg: "Expense does not exist",
               });
+            } else {
+              await UpdateUserData(
+                authData.userId,
+                expense.value,
+                "delete",
+                sheet_id
+              );
+              // delete expense
+              await expense
+                .deleteOne({
+                  _id: expense_id,
+                })
+                .then(() => {
+                  Do_Statistics(authData.userId);
+                  SheetValue(sheet_id);
+                  res.status(200).json({
+                    msg: "Expense Deleted Successfully",
+                  });
+                });
+            }
           }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -575,91 +638,98 @@ const updateExpense = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!sheet_id) {
-          errorLog.push("sheet_id is required");
-        }
-
-        //check if id passed in the params is valid for the mongo
-        if (!mongoose.Types.ObjectId.isValid(sheet_id)) {
-          errorLog.push("sheet_id is not valid");
-        }
-        if (!expense_id) {
-          errorLog.push("expense_id is required");
-        }
-
-        //check if id passed in the params is valid for the mongo
-        if (!mongoose.Types.ObjectId.isValid(expense_id)) {
-          errorLog.push("expense_id is not valid");
-        }
-
-        if (!value) {
-          errorLog.push("value is required");
-        }
-        if (!label) {
-          errorLog.push("label is required");
-        } else {
-          const userLabels = await Labels.findOne({
-            user_id: authData.userId,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
-
-          if (!userLabels.label === label) {
-            errorLog.push("label not found");
+        } else {
+          if (!sheet_id) {
+            errorLog.push("sheet_id is required");
           }
-        }
 
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
-          });
-        } else {
-          const expense = await Expenses.findOne({
-            _id: expense_id,
-          });
+          //check if id passed in the params is valid for the mongo
+          if (!mongoose.Types.ObjectId.isValid(sheet_id)) {
+            errorLog.push("sheet_id is not valid");
+          }
+          if (!expense_id) {
+            errorLog.push("expense_id is required");
+          }
 
-          if (!expense) {
+          //check if id passed in the params is valid for the mongo
+          if (!mongoose.Types.ObjectId.isValid(expense_id)) {
+            errorLog.push("expense_id is not valid");
+          }
+
+          if (!value) {
+            errorLog.push("value is required");
+          }
+          if (!label) {
+            errorLog.push("label is required");
+          } else {
+            const userLabels = await Labels.findOne({
+              user_id: authData.userId,
+            });
+
+            if (!userLabels.label === label) {
+              errorLog.push("label not found");
+            }
+          }
+
+          if (errorLog.length > 0) {
             res.status(400).json({
-              msg: "Expense does not exist",
+              msg: "Bad Request",
+              errorLog,
+            });
+          } else {
+            const expense = await Expenses.findOne({
+              _id: expense_id,
+            });
+
+            if (!expense) {
+              res.status(400).json({
+                msg: "Expense does not exist",
+              });
+            }
+
+            await UpdateUserData(
+              authData.userId,
+              value,
+              "update",
+              sheet_id,
+              expense.value
+            );
+            await Do_Statistics(authData.userId);
+
+            await Expenses.findOneAndUpdate(
+              {
+                _id: expense_id,
+              },
+              {
+                value,
+                label,
+                description,
+              }
+            ).then(() => {
+              SheetValue(sheet_id);
+            });
+
+            res.status(200).json({
+              msg: "Expense Updated Successfully",
+              expense,
             });
           }
-
-          await UpdateUserData(
-            authData.userId,
-            value,
-            "update",
-            sheet_id,
-            expense.value
-          );
-          await Do_Statistics(authData.userId);
-
-          await Expenses.findOneAndUpdate(
-            {
-              _id: expense_id,
-            },
-            {
-              value,
-              label,
-              description,
-            }
-          ).then(() => {
-            SheetValue(sheet_id);
-          });
-
-          res.status(200).json({
-            msg: "Expense Updated Successfully",
-            expense,
-          });
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -676,57 +746,64 @@ const addDeadline = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-
-        if (!deadline_name) {
-          errorLog.push("deadline_name is required");
-        }
-        if (!deadline_date) {
-          errorLog.push("deadline_date is required");
-        }
-        if (!deadline_value) {
-          errorLog.push("deadline_value is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          const newDeadline = new Deadlines({
-            user_id: authData.userId,
-            deadline_name,
-            deadline_date,
-            deadline_value,
-          });
-          newDeadline
-            .save()
-            .then((data) => {
-              res.status(200).json({
-                msg: "Deadline Added Successfully",
-                data,
-              });
-            })
-            .catch((err) => {
-              // console.log(err);
-              res.status(500).json({
-                msg: "Something went wrong",
-              });
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
+
+          if (!deadline_name) {
+            errorLog.push("deadline_name is required");
+          }
+          if (!deadline_date) {
+            errorLog.push("deadline_date is required");
+          }
+          if (!deadline_value) {
+            errorLog.push("deadline_value is required");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
             });
+          } else {
+            const newDeadline = new Deadlines({
+              user_id: authData.userId,
+              deadline_name,
+              deadline_date,
+              deadline_value,
+            });
+            newDeadline
+              .save()
+              .then((data) => {
+                res.status(200).json({
+                  msg: "Deadline Added Successfully",
+                  data,
+                });
+              })
+              .catch((err) => {
+                // console.log(err);
+                res.status(500).json({
+                  msg: "Something went wrong",
+                });
+              });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -741,44 +818,51 @@ const getOneDeadLine = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!deadline_id) {
-          errorLog.push("deadline_id is required");
-        }
-
-        //check if id passed in the params is valid for the mongo
-        if (!mongoose.Types.ObjectId.isValid(deadline_id)) {
-          errorLog.push("deadline_id is not valid");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          Deadlines.findOne({ _id: deadline_id })
-            .then((data) => {
-              res.status(200).json({
-                msg: "Deadline Fetched Successfully",
-                data,
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Something went wrong",
-              });
+          if (!deadline_id) {
+            errorLog.push("deadline_id is required");
+          }
+
+          //check if id passed in the params is valid for the mongo
+          if (!mongoose.Types.ObjectId.isValid(deadline_id)) {
+            errorLog.push("deadline_id is not valid");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
             });
+          } else {
+            Deadlines.findOne({ _id: deadline_id })
+              .then((data) => {
+                res.status(200).json({
+                  msg: "Deadline Fetched Successfully",
+                  data,
+                });
+              })
+              .catch((err) => {
+                res.status(500).json({
+                  msg: "Something went wrong",
+                });
+              });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -792,40 +876,47 @@ const getDeadlines = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
 
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+      jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          Deadlines.find({ user_id: authData.userId })
-            .then((data) => {
-              res.status(200).json({
-                msg: "Deadline Fetched Successfully",
-                data,
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Something went wrong",
-              });
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
             });
+          } else {
+            Deadlines.find({ user_id: authData.userId })
+              .then((data) => {
+                res.status(200).json({
+                  msg: "Deadline Fetched Successfully",
+                  data,
+                });
+              })
+              .catch((err) => {
+                res.status(500).json({
+                  msg: "Something went wrong",
+                });
+              });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -842,57 +933,64 @@ const updateDeadline = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!deadline_id) {
-          errorLog.push("deadline_id is required");
-        }
-
-        //check if id passed in the params is valid for the mongo
-        if (!mongoose.Types.ObjectId.isValid(deadline_id)) {
-          errorLog.push("deadline_id is not valid");
-        }
-
-        if (!deadline_name) {
-          errorLog.push("deadline_name is required");
-        }
-        if (!deadline_date) {
-          errorLog.push("deadline_date is required");
-        }
-        if (!deadline_value) {
-          errorLog.push("deadline_value is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          Deadlines.updateOne(
-            { _id: deadline_id },
-            { deadline_name, deadline_date, deadline_value }
-          )
-            .then((data) => {
-              res.status(200).json({
-                msg: "Deadline Updated Successfully",
-                data,
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Something went wrong",
-              });
+          if (!deadline_id) {
+            errorLog.push("deadline_id is required");
+          }
+
+          //check if id passed in the params is valid for the mongo
+          if (!mongoose.Types.ObjectId.isValid(deadline_id)) {
+            errorLog.push("deadline_id is not valid");
+          }
+
+          if (!deadline_name) {
+            errorLog.push("deadline_name is required");
+          }
+          if (!deadline_date) {
+            errorLog.push("deadline_date is required");
+          }
+          if (!deadline_value) {
+            errorLog.push("deadline_value is required");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
             });
+          } else {
+            Deadlines.updateOne(
+              { _id: deadline_id },
+              { deadline_name, deadline_date, deadline_value }
+            )
+              .then((data) => {
+                res.status(200).json({
+                  msg: "Deadline Updated Successfully",
+                  data,
+                });
+              })
+              .catch((err) => {
+                res.status(500).json({
+                  msg: "Something went wrong",
+                });
+              });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -907,44 +1005,51 @@ const deleteDeadline = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!deadline_id) {
-          errorLog.push("deadline_id is required");
-        }
-
-        //check if id passed in the params is valid for the mongo
-        if (!mongoose.Types.ObjectId.isValid(deadline_id)) {
-          errorLog.push("deadline_id is not valid");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          Deadlines.deleteOne({ _id: deadline_id })
-            .then((data) => {
-              res.status(200).json({
-                msg: "Deadline Deleted Successfully",
-                data,
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Something went wrong",
-              });
+          if (!deadline_id) {
+            errorLog.push("deadline_id is required");
+          }
+
+          //check if id passed in the params is valid for the mongo
+          if (!mongoose.Types.ObjectId.isValid(deadline_id)) {
+            errorLog.push("deadline_id is not valid");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
             });
+          } else {
+            Deadlines.deleteOne({ _id: deadline_id })
+              .then((data) => {
+                res.status(200).json({
+                  msg: "Deadline Deleted Successfully",
+                  data,
+                });
+              })
+              .catch((err) => {
+                res.status(500).json({
+                  msg: "Something went wrong",
+                });
+              });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -959,43 +1064,50 @@ const getStatistics = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
 
-    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
+      jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          //get user spent budget
-          const user = await UserData.findOne({
-            user_id: authData.userId,
-          });
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
 
-          const userStates = await statistics.find({
-            user_id: authData.userId,
-          });
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+            });
+          } else {
+            //get user spent budget
+            const user = await UserData.findOne({
+              user_id: authData.userId,
+            });
 
-          res.status(200).json({
-            msg: "Statistics Fetched Successfully",
-            data: {
-              spent_budget: user.spent,
-              statistics: userStates,
-            },
-          });
+            const userStates = await statistics.find({
+              user_id: authData.userId,
+            });
+
+            res.status(200).json({
+              msg: "Statistics Fetched Successfully",
+              data: {
+                spent_budget: user.spent,
+                statistics: userStates,
+              },
+            });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -1011,49 +1123,56 @@ const addSheets = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is not valid");
-        }
-
-        if (!sheet_type) {
-          errorLog.push("sheet_type is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          const newSheet = new Sheets({
-            user_id: authData.userId,
-            sheet_type,
-            value: 0,
-          });
-          newSheet
-            .save()
-            .then((data) => {
-              res.status(200).json({
-                msg: "Sheet Added Successfully",
-                data,
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Something went wrong",
-              });
+          if (!authData.userId) {
+            errorLog.push("user_id is not valid");
+          }
+
+          if (!sheet_type) {
+            errorLog.push("sheet_type is required");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
             });
+          } else {
+            const newSheet = new Sheets({
+              user_id: authData.userId,
+              sheet_type,
+              value: 0,
+            });
+            newSheet
+              .save()
+              .then((data) => {
+                res.status(200).json({
+                  msg: "Sheet Added Successfully",
+                  data,
+                });
+              })
+              .catch((err) => {
+                res.status(500).json({
+                  msg: "Something went wrong",
+                });
+              });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -1067,39 +1186,46 @@ const getSheets = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          Sheets.find({ user_id: authData.userId })
-            .then((data) => {
-              res.status(200).json({
-                msg: "Sheets Fetched Successfully",
-                data,
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Something went wrong",
-              });
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
             });
+          } else {
+            Sheets.find({ user_id: authData.userId })
+              .then((data) => {
+                res.status(200).json({
+                  msg: "Sheets Fetched Successfully",
+                  data,
+                });
+              })
+              .catch((err) => {
+                res.status(500).json({
+                  msg: "Something went wrong",
+                });
+              });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -1114,48 +1240,55 @@ const deleteSheet = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!sheet_id) {
-          errorLog.push("sheet_id is required");
-        }
-
-        //check if id passed in the params is valid for the mongo
-        if (!mongoose.Types.ObjectId.isValid(sheet_id)) {
-          errorLog.push("sheet_id is not valid");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          Sheets.findByIdAndDelete(sheet_id)
-            .then(async (data) => {
-              //delete all the expenses
-              await Expenses.deleteMany({ sheet_id: sheet_id });
+          if (!sheet_id) {
+            errorLog.push("sheet_id is required");
+          }
 
-              res.status(200).json({
-                msg: "Sheet Deleted Successfully",
-                data,
-              });
-            })
+          //check if id passed in the params is valid for the mongo
+          if (!mongoose.Types.ObjectId.isValid(sheet_id)) {
+            errorLog.push("sheet_id is not valid");
+          }
 
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Something went wrong",
-              });
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
             });
+          } else {
+            Sheets.findByIdAndDelete(sheet_id)
+              .then(async (data) => {
+                //delete all the expenses
+                await Expenses.deleteMany({ sheet_id: sheet_id });
+
+                res.status(200).json({
+                  msg: "Sheet Deleted Successfully",
+                  data,
+                });
+              })
+
+              .catch((err) => {
+                res.status(500).json({
+                  msg: "Something went wrong",
+                });
+              });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -1172,49 +1305,56 @@ const updateSheet = async (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!sheet_id) {
-          errorLog.push("sheet_id is required");
-        }
-
-        //check if id passed in the params is valid for the mongo
-        if (!mongoose.Types.ObjectId.isValid(sheet_id)) {
-          errorLog.push("sheet_id is not valid");
-        }
-
-        if (!sheet_type) {
-          errorLog.push("sheet_type is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          const response = await Sheets.findByIdAndUpdate(sheet_id, {
-            sheet_type,
-            updated_at: Date.now(),
-          });
-          if (response) {
-            res.status(200).json({
-              msg: "Sheet Updated Successfully",
+          if (!sheet_id) {
+            errorLog.push("sheet_id is required");
+          }
+
+          //check if id passed in the params is valid for the mongo
+          if (!mongoose.Types.ObjectId.isValid(sheet_id)) {
+            errorLog.push("sheet_id is not valid");
+          }
+
+          if (!sheet_type) {
+            errorLog.push("sheet_type is required");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
             });
           } else {
-            res.status(500).json({
-              msg: "Something went wrong",
+            const response = await Sheets.findByIdAndUpdate(sheet_id, {
+              sheet_type,
+              updated_at: Date.now(),
             });
+            if (response) {
+              res.status(200).json({
+                msg: "Sheet Updated Successfully",
+              });
+            } else {
+              res.status(500).json({
+                msg: "Something went wrong",
+              });
+            }
           }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -1231,57 +1371,64 @@ const addLabels = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-        if (!label) {
-          errorLog.push("label is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          Do_Statistics(authData.userId);
-          const newLabel = new Labels({
-            user_id: authData.userId,
-            label: label.toLowerCase(),
-          });
-          // first check if this label found or not
-          Labels.findOne({ user_id: authData.userId, label }).then((data) => {
-            if (data) {
-              res.status(409).json({
-                msg: "Label already exists",
-              });
-            } else {
-              newLabel
-                .save()
-                .then((data) => {
-                  res.status(200).json({
-                    msg: "Label Added Successfully",
-                    data,
-                  });
-                })
-                .catch((err) => {
-                  res.status(500).json({
-                    msg: "Something went wrong",
-                  });
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
+          if (!label) {
+            errorLog.push("label is required");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
+            });
+          } else {
+            Do_Statistics(authData.userId);
+            const newLabel = new Labels({
+              user_id: authData.userId,
+              label: label.toLowerCase(),
+            });
+            // first check if this label found or not
+            Labels.findOne({ user_id: authData.userId, label }).then((data) => {
+              if (data) {
+                res.status(409).json({
+                  msg: "Label already exists",
                 });
-            }
-          });
+              } else {
+                newLabel
+                  .save()
+                  .then((data) => {
+                    res.status(200).json({
+                      msg: "Label Added Successfully",
+                      data,
+                    });
+                  })
+                  .catch((err) => {
+                    res.status(500).json({
+                      msg: "Something went wrong",
+                    });
+                  });
+              }
+            });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -1295,38 +1442,45 @@ const getLabels = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          Labels.find({ user_id: authData.userId })
-            .then((data) => {
-              res.status(200).json({
-                msg: "Labels Fetched Successfullyy",
-                data,
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Something went wrong",
-              });
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
             });
+          } else {
+            Labels.find({ user_id: authData.userId })
+              .then((data) => {
+                res.status(200).json({
+                  msg: "Labels Fetched Successfullyy",
+                  data,
+                });
+              })
+              .catch((err) => {
+                res.status(500).json({
+                  msg: "Something went wrong",
+                });
+              });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -1341,40 +1495,47 @@ const deleteLabel = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!label_id) {
-          errorLog.push("label_id is required");
-        }
-
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          Labels.findByIdAndDelete(label_id)
-            .then((data) => {
-              Do_Statistics(authData.userId);
-              res.status(200).json({
-                msg: "Label Deleted Successfully",
-                data,
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Something went wrong",
-              });
+          if (!label_id) {
+            errorLog.push("label_id is required");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
             });
+          } else {
+            Labels.findByIdAndDelete(label_id)
+              .then((data) => {
+                Do_Statistics(authData.userId);
+                res.status(200).json({
+                  msg: "Label Deleted Successfully",
+                  data,
+                });
+              })
+              .catch((err) => {
+                res.status(500).json({
+                  msg: "Something went wrong",
+                });
+              });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
@@ -1389,38 +1550,45 @@ const get_user_data = (req, res) => {
       msg: "Unauthorized",
     });
   } else {
-    const bearer = bearerHeader.split(" ");
-    const bearerToken = bearer[1];
-    jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
-      if (err) {
-        res.status(403).json({
-          msg: "Forbidden",
-        });
-      } else {
-        if (!authData.userId) {
-          errorLog.push("user_id is required");
-        }
-        if (errorLog.length > 0) {
-          res.status(400).json({
-            msg: "Bad Request",
-            errorLog,
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
           });
         } else {
-          UserData.findOne({ user_id: authData.userId })
-            .then((data) => {
-              res.status(200).json({
-                msg: "User Data Fetched Successfully",
-                data,
-              });
-            })
-            .catch((err) => {
-              res.status(500).json({
-                msg: "Something went wrong",
-              });
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
             });
+          } else {
+            UserData.findOne({ user_id: authData.userId })
+              .then((data) => {
+                res.status(200).json({
+                  msg: "User Data Fetched Successfully",
+                  data,
+                });
+              })
+              .catch((err) => {
+                res.status(500).json({
+                  msg: "Something went wrong",
+                });
+              });
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
   }
 };
 
