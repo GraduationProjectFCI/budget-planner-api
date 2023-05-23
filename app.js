@@ -25,7 +25,7 @@ app.get("/", (req, res) => {
 });
 
 const start = async () => {
-  const port = 3000;
+  const port = 4000;
 
   try {
     mongoose

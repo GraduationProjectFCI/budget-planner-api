@@ -117,6 +117,16 @@ const updateLimit = (req, res) => {
             errorLog.push("limit value is required");
           }
 
+          //limit value must be a number
+          if (isNaN(limit)) {
+            errorLog.push("limit value must be a number");
+          }
+
+          //limit value must be a positive number
+          if (limit < 0) {
+            errorLog.push("limit value must be a positive number");
+          }
+
           if (errorLog.length > 0) {
             res.status(400).json({
               msg: "Bad Request",
