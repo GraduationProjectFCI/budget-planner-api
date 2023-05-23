@@ -17,15 +17,20 @@ const UpdateUserData = async (
 
   if (sheet) {
     if (sheet.sheet_type === "export") {
-      if (methode === "add") {
-        userData.total += expenseValue;
-      } else if (methode === "delete") {
-        userData.total -= expenseValue;
-      } else if (methode === "update") {
-        userData.total += expenseValue - prevExpenseValue;
+      if (userData) {
+        if (methode === "add") {
+          userData.spent += expenseValue;
+          userData.remaining -= expenseValue;
+        } else if (methode === "delete") {
+          userData.spent -= expenseValue;
+          userData.remaining += expenseValue;
+        } else if (methode === "update") {
+          userData.spent += expenseValue - prevExpenseValue;
+          userData.remaining = userData.total - userData.spent;
+        }
+        await userData.save();
       }
     }
-    await userData.save();
   }
 };
 

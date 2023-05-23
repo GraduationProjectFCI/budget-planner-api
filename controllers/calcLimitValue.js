@@ -5,7 +5,7 @@ const Labels = require("../models/LabelSchema");
 const CalcLimitValue = async (
   user_id,
   sheet_id,
-  methode,
+  expenseValue = 0,
   prevExpenseValue = 0
 ) => {
   //get labels
@@ -36,17 +36,10 @@ const CalcLimitValue = async (
       const sheet = await Sheets.findOne({
         _id: sheet_id,
       });
-
       if (sheet) {
         if (sheet.sheet_type === "export") {
           if (limit) {
-            if (methode === "add") {
-              limit.value += expensesSum;
-            } else if (methode === "delete") {
-              limit.value -= expensesSum;
-            } else if (methode === "update") {
-              limit.value += expensesSum - prevExpenseValue;
-            }
+            limit.value = expensesSum;
             await limit.save();
           }
         }

@@ -473,11 +473,12 @@ const addExpenses = (req, res) => {
               label,
               description,
             });
-            await newExpense.save();
-            await SheetValue(sheet_id);
-            await UpdateUserData(authData.userId, value, "add", sheet_id);
-            await Do_Statistics(authData.userId);
-            await CalcLimitValue(authData.userId, sheet_id, "add");
+            await newExpense.save().then(async () => {
+              await SheetValue(sheet_id);
+              await UpdateUserData(authData.userId, value, "add", sheet_id);
+              await Do_Statistics(authData.userId);
+              await CalcLimitValue(authData.userId, sheet_id);
+            });
 
             res.status(200).json({
               msg: "Expense Added Successfully",
@@ -613,6 +614,12 @@ const deleteExpense = (req, res) => {
                 "delete",
                 sheet_id
               );
+              await CalcLimitValue(
+                authData.userId,
+                sheet_id,
+
+                expense.value
+              );
               // delete expense
               await expense
                 .deleteOne({
@@ -621,7 +628,6 @@ const deleteExpense = (req, res) => {
                 .then(async () => {
                   await Do_Statistics(authData.userId);
                   await SheetValue(sheet_id);
-                  await CalcLimitValue(authData.userId, sheet_id, "delete");
                   res.status(200).json({
                     msg: "Expense Deleted Successfully",
                   });
@@ -715,12 +721,7 @@ const updateExpense = (req, res) => {
               expense.value
             );
             await Do_Statistics(authData.userId);
-            await CalcLimitValue(
-              authData.userId,
-              sheet_id,
-              "update",
-              expense.value
-            );
+            await CalcLimitValue(authData.userId, sheet_id, expense.value);
 
             await Expenses.findOneAndUpdate(
               {
