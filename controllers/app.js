@@ -98,14 +98,13 @@ const updateLimit = (req, res) => {
             errorLog.push("user_id is required");
           }
 
-          //check if id passed in the params is valid for the mongo
-          if (!mongoose.Types.ObjectId.isValid(limit_id)) {
-            errorLog.push("limit_id is not valid");
-          }
-
           if (!limit_id) {
             errorLog.push("limit_id is required");
           } else {
+            //check if id passed in the params is valid for the mongo
+            if (!mongoose.Types.ObjectId.isValid(limit_id)) {
+              errorLog.push("limit_id is not valid");
+            }
             const limit = await Limit.findOne({
               _id: limit_id,
             });
