@@ -32,8 +32,6 @@ const CalcLimitValue = async (user_id, sheet_id, methode) => {
         _id: sheet_id,
       });
 
-      console.log(expensesSum);
-
       if (sheet) {
         if (sheet.sheet_type === "export") {
           if (limit) {
