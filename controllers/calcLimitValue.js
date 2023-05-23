@@ -2,7 +2,12 @@ const expenses = require("../models/expenses");
 const limits = require("../models/LimitSchema");
 const Sheets = require("../models/sheetSchema");
 const Labels = require("../models/LabelSchema");
-const CalcLimitValue = async (user_id, sheet_id, methode) => {
+const CalcLimitValue = async (
+  user_id,
+  sheet_id,
+  methode,
+  prevExpenseValue = 0
+) => {
   //get labels
   const labels = await Labels.find({
     user_id,

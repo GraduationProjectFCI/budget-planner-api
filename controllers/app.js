@@ -715,7 +715,12 @@ const updateExpense = (req, res) => {
               expense.value
             );
             await Do_Statistics(authData.userId);
-            await CalcLimitValue(authData.userId, sheet_id, "update");
+            await CalcLimitValue(
+              authData.userId,
+              sheet_id,
+              "update",
+              expense.value
+            );
 
             await Expenses.findOneAndUpdate(
               {
