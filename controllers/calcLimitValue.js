@@ -1,39 +1,54 @@
 const expenses = require("../models/expenses");
 const limits = require("../models/LimitSchema");
 const Sheets = require("../models/sheetSchema");
-const CalcLimitValue = async (user_id, label, sheet_id, methode) => {
-  let expensesSum = 0;
-  //get expenses
-  const LabelExpenses = await expenses.find({
+const Labels = require("../models/LabelSchema");
+const CalcLimitValue = async (user_id, sheet_id, methode) => {
+  //get labels
+  const labels = await Labels.find({
     user_id,
-    label,
   });
 
-  LabelExpenses.map((label) => {
-    expensesSum += label.value;
-  });
+  if (labels) {
+    labels.map(async (item) => {
+      let expensesSum = 0;
+      const { label } = item;
+      //get expenses
+      const LabelExpenses = await expenses.find({
+        user_id,
+        label,
+      });
 
-  //get limit
-  const limit = await limits.findOne({
-    user_id,
-    label,
-  });
+      LabelExpenses.map((label) => {
+        expensesSum += label.value;
+      });
 
-  const sheet = await Sheets.findOne({
-    _id: sheet_id,
-  });
+      //get limit
+      const limit = await limits.findOne({
+        user_id,
+        label,
+      });
 
-  if (sheet.sheet_type === "export") {
-    if (limit) {
-      if (methode === "add") {
-        limit.value += expensesSum;
-      } else if (methode === "delete") {
-        limit.value -= expensesSum;
-      } else if (methode === "update") {
-        limit.value += expensesSum - prevExpenseValue;
+      const sheet = await Sheets.findOne({
+        _id: sheet_id,
+      });
+
+      console.log(expensesSum);
+
+      if (sheet) {
+        if (sheet.sheet_type === "export") {
+          if (limit) {
+            if (methode === "add") {
+              limit.value += expensesSum;
+            } else if (methode === "delete") {
+              limit.value -= expensesSum;
+            } else if (methode === "update") {
+              limit.value += expensesSum - prevExpenseValue;
+            }
+            await limit.save();
+          }
+        }
       }
-      await limit.save();
-    }
+    });
   }
 };
 
