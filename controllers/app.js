@@ -13,6 +13,7 @@ const UpdateUserData = require("./updateUserData");
 const mongoose = require("mongoose");
 
 const jwt = require("jsonwebtoken");
+const CalcLimitValue = require("./calcLimitValue");
 
 // ######## Limits ##########
 const deleteLimit = (req, res) => {
@@ -476,6 +477,7 @@ const addExpenses = (req, res) => {
             await SheetValue(sheet_id);
             await UpdateUserData(authData.userId, value, "add", sheet_id);
             await Do_Statistics(authData.userId);
+            await CalcLimitValue(authData.userId, label, sheet_id, "add");
 
             res.status(200).json({
               msg: "Expense Added Successfully",
@@ -616,9 +618,15 @@ const deleteExpense = (req, res) => {
                 .deleteOne({
                   _id: expense_id,
                 })
-                .then(() => {
-                  Do_Statistics(authData.userId);
-                  SheetValue(sheet_id);
+                .then(async () => {
+                  await Do_Statistics(authData.userId);
+                  await SheetValue(sheet_id);
+                  await CalcLimitValue(
+                    authData.userId,
+                    label,
+                    sheet_id,
+                    "delete"
+                  );
                   res.status(200).json({
                     msg: "Expense Deleted Successfully",
                   });
@@ -712,6 +720,7 @@ const updateExpense = (req, res) => {
               expense.value
             );
             await Do_Statistics(authData.userId);
+            await CalcLimitValue(authData.userId, label, sheet_id, "update");
 
             await Expenses.findOneAndUpdate(
               {
