@@ -6,7 +6,23 @@ app.use(bodyParser.json());
 
 const cors = require("cors");
 
-app.use(cors("*"));
+const allowedOrigins = [
+  "https://budget-planner-web.vercel.app",
+  "http://localhost:3000",
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+  })
+);
+
 const mongoose = require("mongoose");
 
 // import created functions
