@@ -399,6 +399,15 @@ const updateProfileData = (req, res) => {
               {
                 new: true,
               }
+            ).then(
+              //update the budget in the user data
+              async () => {
+                const userData = await UserData.findOne({
+                  user_id: authData.userId,
+                });
+                userData.total = budget;
+                await userData.save();
+              }
             );
             res.status(200).json({
               msg: "updated Successfully",
@@ -1298,6 +1307,8 @@ const deleteSheet = (req, res) => {
                 //delete all the expenses
                 await Expenses.deleteMany({ sheet_id: sheet_id });
                 await UpdateUserData(authData.userId, sheet_id);
+                await CalcLimitValue(authData.userId, sheet_id);
+                await Do_Statistics(authData.userId);
 
                 res.status(200).json({
                   msg: "Sheet Deleted Successfully",
