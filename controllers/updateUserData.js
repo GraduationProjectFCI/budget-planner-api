@@ -1,12 +1,7 @@
 const Sheets = require("../models/sheetSchema");
 const UserData = require("../models/user_data_modal");
-const UpdateUserData = async (
-  user_id,
-  expenseValue,
-  methode,
-  sheet_id,
-  prevExpenseValue = 0
-) => {
+const Expenses = require("../models/expenses");
+const UpdateUserData = async (user_id, sheet_id) => {
   const userData = await UserData.findOne({
     user_id,
   });
@@ -15,19 +10,20 @@ const UpdateUserData = async (
     _id: sheet_id,
   });
 
+  // get all expenses
+  const expenses = await Expenses.find({
+    user_id,
+  });
+  let expenses_value = 0;
+  expenses.forEach((expense) => {
+    expenses_value += expense.value;
+  });
+
   if (sheet) {
     if (sheet.sheet_type === "export") {
       if (userData) {
-        if (methode === "add") {
-          userData.spent += expenseValue;
-          userData.remaining -= expenseValue;
-        } else if (methode === "delete") {
-          userData.spent -= expenseValue;
-          userData.remaining += expenseValue;
-        } else if (methode === "update") {
-          userData.spent += expenseValue - prevExpenseValue;
-          userData.remaining = userData.total - userData.spent;
-        }
+        userData.spent = expenses_value;
+        userData.remaining = userData.total - expenses_value;
         await userData.save();
       }
     }

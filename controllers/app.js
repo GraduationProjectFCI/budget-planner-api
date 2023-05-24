@@ -486,7 +486,7 @@ const addExpenses = (req, res) => {
             });
             await newExpense.save().then(async () => {
               await SheetValue(sheet_id);
-              await UpdateUserData(authData.userId, value, "add", sheet_id);
+              await UpdateUserData(authData.userId, sheet_id);
               await Do_Statistics(authData.userId);
               await CalcLimitValue(authData.userId, sheet_id);
             });
@@ -619,18 +619,6 @@ const deleteExpense = (req, res) => {
                 msg: "Expense does not exist",
               });
             } else {
-              await UpdateUserData(
-                authData.userId,
-                expense.value,
-                "delete",
-                sheet_id
-              );
-              await CalcLimitValue(
-                authData.userId,
-                sheet_id,
-
-                expense.value
-              );
               // delete expense
               await expense
                 .deleteOne({
@@ -639,6 +627,13 @@ const deleteExpense = (req, res) => {
                 .then(async () => {
                   await Do_Statistics(authData.userId);
                   await SheetValue(sheet_id);
+                  await UpdateUserData(authData.userId, sheet_id);
+                  await CalcLimitValue(
+                    authData.userId,
+                    sheet_id,
+
+                    expense.value
+                  );
                   res.status(200).json({
                     msg: "Expense Deleted Successfully",
                   });
@@ -695,7 +690,18 @@ const updateExpense = (req, res) => {
 
           if (!value) {
             errorLog.push("value is required");
+          } else {
+            //value must be a number
+            if (isNaN(value)) {
+              errorLog.push("value must be a number");
+            }
+
+            //value must be a positive number
+            if (value < 0) {
+              errorLog.push("value must be a positive number");
+            }
           }
+
           if (!label) {
             errorLog.push("label is required");
           } else {
@@ -724,16 +730,6 @@ const updateExpense = (req, res) => {
               });
             }
 
-            await UpdateUserData(
-              authData.userId,
-              value,
-              "update",
-              sheet_id,
-              expense.value
-            );
-            await Do_Statistics(authData.userId);
-            await CalcLimitValue(authData.userId, sheet_id, expense.value);
-
             await Expenses.findOneAndUpdate(
               {
                 _id: expense_id,
@@ -743,8 +739,11 @@ const updateExpense = (req, res) => {
                 label,
                 description,
               }
-            ).then(() => {
-              SheetValue(sheet_id);
+            ).then(async () => {
+              await UpdateUserData(authData.userId, sheet_id);
+              await Do_Statistics(authData.userId);
+              await CalcLimitValue(authData.userId, sheet_id, expense.value);
+              await SheetValue(sheet_id);
             });
 
             res.status(200).json({
@@ -1298,6 +1297,7 @@ const deleteSheet = (req, res) => {
               .then(async (data) => {
                 //delete all the expenses
                 await Expenses.deleteMany({ sheet_id: sheet_id });
+                await UpdateUserData(authData.userId, sheet_id);
 
                 res.status(200).json({
                   msg: "Sheet Deleted Successfully",
