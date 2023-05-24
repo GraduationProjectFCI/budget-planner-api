@@ -183,14 +183,18 @@ const login = async (req, res) => {
     errorlog.push("password must be provided");
   }
 
-  //if email and password found
-  if (email && password) {
+  if (errorlog.length) {
+    res.status(400).json({
+      msg: errorlog,
+    });
+  } else {
     //check if email is registered
     const user = await User.findOne({ email });
-
     //if email is not registered
     if (!user) {
-      errorlog.push("user not found");
+      res.status(400).json({
+        msg: "email is not registered",
+      });
     } else {
       try {
         //if email is registered
@@ -199,14 +203,15 @@ const login = async (req, res) => {
 
         //if password is not correct
         if (!isPasswordMatch) {
-          errorlog.push("password is not correct");
+          res.status(400).json({ msg: "password is not correct" });
         } else {
           //if password is correct
           //check if user is active
           if (!user.active) {
-            errorlog.push("user is not active");
+            res.status(400).json({
+              msg: "user not activated",
+            });
           } else {
-            //send the user data and token in the response
             const token = user.createJWT(); //create token
             res.status(200).json({
               msg: "logged in successfully",
@@ -223,13 +228,6 @@ const login = async (req, res) => {
           msg: error.message,
         });
       }
-    }
-
-    //if there is an error
-    if (errorlog.length) {
-      res.status(400).json({
-        msg: errorlog,
-      });
     }
   }
 };
