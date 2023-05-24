@@ -446,7 +446,18 @@ const addExpenses = (req, res) => {
           }
           if (!value) {
             errorLog.push("value is required");
+          } else {
+            //value must be a number
+            if (isNaN(value)) {
+              errorLog.push("value must be a number");
+            }
+
+            //value must be a positive number
+            if (value < 0) {
+              errorLog.push("value must be a positive number");
+            }
           }
+
           if (!label) {
             errorLog.push("label is required");
           }
