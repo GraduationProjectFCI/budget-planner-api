@@ -1304,17 +1304,19 @@ const deleteSheet = (req, res) => {
               errorLog,
             });
           } else {
-            Sheets.findByIdAndDelete(sheet_id)
-              .then(async () => {
-                await Expenses.deleteMany({ sheet_id: sheet_id });
-                await SheetValue(sheet_id);
-                await UpdateUserData(authData.userId, sheet_id);
-                await CalcLimitValue(authData.userId, sheet_id);
-                await Do_Statistics(authData.userId);
-
-                res.status(200).json({
-                  msg: "Sheet Deleted Successfully",
-                });
+            Sheets.findOneAndDelete({ _id: sheet_id })
+              .then(async (data) => {
+                Expenses.deleteMany({ sheet_id: sheet_id }).then(
+                  async (data) => {
+                    await Do_Statistics(authData.userId);
+                    await SheetValue(sheet_id);
+                    await UpdateUserData(authData.userId, sheet_id);
+                    await CalcLimitValue(authData.userId, sheet_id);
+                    res.status(200).json({
+                      msg: "Sheet Deleted Successfully",
+                    });
+                  }
+                );
               })
 
               .catch((err) => {
