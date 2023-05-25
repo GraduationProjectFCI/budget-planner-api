@@ -1306,14 +1306,12 @@ const deleteSheet = (req, res) => {
           } else {
             Sheets.findByIdAndDelete(sheet_id)
               .then(async () => {
-                await Expenses.deleteMany({ sheet_id: sheet_id }).then(
-                  async () => {
-                    await SheetValue(sheet_id);
-                    await UpdateUserData(authData.userId, sheet_id);
-                    await CalcLimitValue(authData.userId, sheet_id);
-                  }
-                );
-                await Do_Statistics(authData.userId);
+                Expenses.deleteMany({ sheet_id: sheet_id }).then(async () => {
+                  await SheetValue(sheet_id);
+                  await UpdateUserData(authData.userId, sheet_id);
+                  await CalcLimitValue(authData.userId, sheet_id);
+                  await Do_Statistics(authData.userId);
+                });
 
                 res.status(200).json({
                   msg: "Sheet Deleted Successfully",
