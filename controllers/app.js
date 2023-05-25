@@ -549,22 +549,24 @@ const getExpenses = (req, res) => {
             } else {
               res.status(404).json({
                 msg: "No Expenses Found",
+                data,
               });
             }
           } else {
-            const expenses = await Expenses.find({
+            Expenses.find({
               sheet_id,
-            });
-            if (expenses.length > 0) {
-              res.status(200).json({
-                msg: "Expenses Fetched Successfully",
-                expenses,
+            })
+              .then((data) => {
+                res.status(200).json({
+                  msg: "Expenses Fetched Successfully",
+                  data,
+                });
+              })
+              .catch((err) => {
+                res.status(500).json({
+                  msg: "Something went wrong",
+                });
               });
-            } else {
-              res.status(404).json({
-                msg: "No Expenses Found",
-              });
-            }
           }
         }
       });
