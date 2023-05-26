@@ -7,7 +7,7 @@ const User = require("../models/user");
 const statistics = require("../models/statesSchema");
 const Limit = require("../models/LimitSchema");
 const SheetValue = require("./SheetValue");
-const Do_Statistics = require("./statistics");
+const DoStatistics = require("./statistics");
 const UpdateUserData = require("./updateUserData");
 const CalcLimitValue = require("./calcLimitValue");
 
@@ -497,7 +497,7 @@ const addExpenses = (req, res) => {
               await SheetValue(sheet_id);
               await UpdateUserData(authData.userId);
               await CalcLimitValue(authData.userId);
-              await Do_Statistics(authData.userId);
+              await DoStatistics(authData.userId);
             });
 
             res.status(200).json({
@@ -636,7 +636,7 @@ const deleteExpense = (req, res) => {
                   _id: expense_id,
                 })
                 .then(async () => {
-                  await Do_Statistics(authData.userId);
+                  await DoStatistics(authData.userId);
                   await SheetValue(sheet_id);
                   await UpdateUserData(authData.userId);
                   await CalcLimitValue(authData.userId);
@@ -747,7 +747,7 @@ const updateExpense = (req, res) => {
               }
             ).then(async () => {
               await UpdateUserData(authData.userId);
-              await Do_Statistics(authData.userId);
+              await DoStatistics(authData.userId);
               await CalcLimitValue(authData.userId);
               await SheetValue(sheet_id);
             });
@@ -1120,7 +1120,7 @@ const getStatistics = (req, res) => {
           } else {
             //get user spent budget
 
-            Do_Statistics(authData.userId).then(async () => {
+            DoStatistics(authData.userId).then(async () => {
               const user = await UserData.findOne({
                 user_id: authData.userId,
               });
@@ -1195,7 +1195,7 @@ const addSheets = (req, res) => {
                 await SheetValue(data._id);
                 await UpdateUserData(authData.userId);
                 await CalcLimitValue(authData.userId);
-                await Do_Statistics(authData.userId);
+                await DoStatistics(authData.userId);
 
                 res.status(200).json({
                   msg: "Sheet Added Successfully",
@@ -1317,7 +1317,7 @@ const deleteSheet = (req, res) => {
                 sheet_id,
               });
 
-              await Do_Statistics(authData.userId);
+              await DoStatistics(authData.userId);
               await UpdateUserData(authData.userId);
               await CalcLimitValue(authData.userId);
 
@@ -1447,7 +1447,7 @@ const addLabels = (req, res) => {
               errorLog,
             });
           } else {
-            Do_Statistics(authData.userId);
+            DoStatistics(authData.userId);
             const newLabel = new Labels({
               user_id: authData.userId,
               label: label.toLowerCase(),
@@ -1570,7 +1570,7 @@ const deleteLabel = (req, res) => {
           } else {
             Labels.findByIdAndDelete(label_id)
               .then((data) => {
-                Do_Statistics(authData.userId);
+                DoStatistics(authData.userId);
                 res.status(200).json({
                   msg: "Label Deleted Successfully",
                   data,

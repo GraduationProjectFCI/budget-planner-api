@@ -30,6 +30,7 @@ const UpdateUserData = async (user_id) => {
     for (const label in labelSums) {
       spent += labelSums[label];
     }
+
     userData.spent = spent;
     userData.remaining = userData.total - spent;
     await userData.save();

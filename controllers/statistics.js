@@ -1,18 +1,19 @@
-const Lebels = require("../models/LabelSchema");
+const Labels = require("../models/LabelSchema");
 const Expenses = require("../models/expenses");
 const UserData = require("../models/user_data_modal");
-const statistics = require("../models/statesSchema");
+const States = require("../models/statesSchema");
 const Sheets = require("../models/sheetSchema");
 
-const Do_Statistics = async (user_id) => {
-  //delete the old statistics if found
-  statistics.deleteMany({ user_id: user_id }).then(async () => {
+const DoStatistics = async (user_id) => {
+  try {
+    //delete the old statistics if found
+    await States.deleteMany({ user_id: user_id });
+
     //User Total Budget
     const user_data = await UserData.findOne({ user_id: user_id });
 
     // get user labels
-
-    const allExportSheetExpenses = [];
+    const labels = await Labels.find({ user_id: user_id });
 
     //get user sheets with the type export
     const sheets = await Sheets.find({
@@ -20,39 +21,33 @@ const Do_Statistics = async (user_id) => {
       sheet_type: "export",
     });
 
+    const allExportSheetExpenses = [];
+
     //get all expenses for each sheet
-    sheets.forEach(async (sheet) => {
+    for (const sheet of sheets) {
       const expenses = await Expenses.find({ sheet_id: sheet._id });
       if (expenses.length > 0) {
-        expenses.forEach(async (expense) => {
-          allExportSheetExpenses.push(expense);
-        });
+        allExportSheetExpenses.push(...expenses);
       }
-    });
-
-    const labels = await Lebels.find({ user_id: user_id });
+    }
 
     if (labels.length > 0) {
-      labels.forEach(async (label) => {
+      for (const label of labels) {
         let labelSum = 0;
-        allExportSheetExpenses.map((expense) => {
+        for (const expense of allExportSheetExpenses) {
           if (expense.label === label.label) {
             labelSum += expense.value;
           }
-        });
-
-        //solve the problem of dividing by zero
-        if (user_data.total === 0) {
-          user_data.total = 1;
-        }
-        if (user_data.spent === 0) {
-          user_data.spent = 1;
         }
 
-        const labelPercentageTotal = (labelSum / user_data.total) * 100;
-        const labelPercentageSpent = (labelSum / user_data.spent) * 100;
+        const labelPercentageTotal = user_data.total
+          ? (labelSum / user_data.total) * 100
+          : 0;
+        const labelPercentageSpent = user_data.spent
+          ? (labelSum / user_data.spent) * 100
+          : 0;
 
-        const newStatistics = new statistics({
+        const newStatistics = new States({
           user_id: user_id,
           label: label.label,
           expensesSum: labelSum,
@@ -60,10 +55,14 @@ const Do_Statistics = async (user_id) => {
           labelPercentageSpent: labelPercentageSpent,
         });
 
-        await newStatistics.save();
-      });
+        console.log(newStatistics);
+
+        // await newStatistics.save();
+      }
     }
-  });
+  } catch (error) {
+    console.error(error);
+  }
 };
 
-module.exports = Do_Statistics;
+module.exports = DoStatistics;
