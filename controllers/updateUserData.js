@@ -1,7 +1,7 @@
 const Sheets = require("../models/sheetSchema");
 const UserData = require("../models/user_data_modal");
 const Expenses = require("../models/expenses");
-const UpdateUserData = async (user_id, sheet_type, considerSheetType) => {
+const UpdateUserData = async (user_id, sheet_id, considerSheetType) => {
   const userData = await UserData.findOne({
     user_id,
   });
