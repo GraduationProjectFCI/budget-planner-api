@@ -1311,23 +1311,29 @@ const deleteSheet = (req, res) => {
               _id: sheet_id,
             });
 
-            if (response) {
+            if (response === null) {
+              res.status(404).json({
+                msg: "Sheet already deleted",
+              });
+            } else if (response) {
               //delete all sheet expenses
               await Expenses.deleteMany({
                 sheet_id,
               });
 
-              await DoStatistics(authData.userId);
-              await UpdateUserData(authData.userId);
-              await CalcLimitValue(authData.userId);
+              try {
+                await DoStatistics(authData.userId);
+                await UpdateUserData(authData.userId);
+                await CalcLimitValue(authData.userId);
 
-              res.status(200).json({
-                msg: "Sheet Deleted Successfully",
-              });
-            } else if (response === null) {
-              res.status(404).json({
-                msg: "Sheet already deleted",
-              });
+                res.status(200).json({
+                  msg: "Sheet Deleted Successfully",
+                });
+              } catch (err) {
+                res.status(500).json({
+                  msg: "Error deleting sheet: " + err.message,
+                });
+              }
             } else {
               res.status(500).json({
                 msg: "Something went wrong",
