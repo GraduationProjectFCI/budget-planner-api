@@ -55,9 +55,7 @@ const DoStatistics = async (user_id) => {
           labelPercentageSpent: labelPercentageSpent,
         });
 
-        console.log(newStatistics);
-
-        // await newStatistics.save();
+        await newStatistics.save();
       }
     }
   } catch (error) {
