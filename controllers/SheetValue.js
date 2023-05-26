@@ -7,7 +7,6 @@ const SheetValue = async (sheet_id) => {
   expenses.forEach((expense) => {
     value += expense.value;
   });
-
   if (sheet) {
     sheet.value = value;
     await sheet.save();

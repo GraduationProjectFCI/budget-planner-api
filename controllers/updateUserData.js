@@ -1,44 +1,37 @@
 const Sheets = require("../models/sheetSchema");
 const UserData = require("../models/user_data_modal");
 const Expenses = require("../models/expenses");
+const Lebels = require("../models/LabelSchema");
+
 const UpdateUserData = async (user_id) => {
-  const userData = await UserData.findOne({
-    user_id,
-  });
+  let labelSums = {};
 
-  //get all sheets of type export
-  const sheets = await Sheets.find({
-    user_id,
+  for (const sheet of await Sheets.find({
+    user_id: user_id,
     sheet_type: "export",
-  });
-
-  //get all expenses of each sheet
-  const allExportSheetsExpenses = [];
-
-  if (sheets.length > 0) {
-    sheets.forEach(async (sheet) => {
-      const expenses = await Expenses.find({
-        sheet_id: sheet._id,
-      });
-      if (expenses.length > 0) {
-        expenses.forEach(async (expense) => {
-          allExportSheetsExpenses.push(expense);
-        });
-      }
-    });
-
-    //calculate the total value of all sheets
-    let spent = 0;
-    allExportSheetsExpenses.forEach((expense) => {
-      spent += expense.value;
-    });
-
-    // update userData if found
-    if (userData) {
-      userData.spent = spent;
-      userData.remaining = userData.total - userData.spent;
-      await userData.save();
+  })) {
+    const expenses = await Expenses.find({ sheet_id: sheet._id });
+    if (expenses.length > 0) {
+      labelSums = expenses.reduce((sums, expense) => {
+        if (expense.label in sums) {
+          sums[expense.label] += expense.value;
+        } else {
+          sums[expense.label] = expense.value;
+        }
+        return sums;
+      }, labelSums);
     }
+  }
+
+  //update user data if found
+  const userData = await UserData.findOne({ user_id: user_id });
+  if (userData) {
+    let spent = 0;
+    for (const label in labelSums) {
+      spent += labelSums[label];
+    }
+    userData.spent = spent;
+    await userData.save();
   }
 };
 
