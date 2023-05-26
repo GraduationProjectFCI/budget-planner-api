@@ -2,12 +2,7 @@ const expenses = require("../models/expenses");
 const limits = require("../models/LimitSchema");
 const Sheets = require("../models/sheetSchema");
 const Labels = require("../models/LabelSchema");
-const CalcLimitValue = async (
-  user_id,
-  sheet_id,
-  expenseValue = 0,
-  prevExpenseValue = 0
-) => {
+const CalcLimitValue = async (user_id, sheet_id, considerSheetType) => {
   //get labels
   const labels = await Labels.find({
     user_id,
@@ -36,12 +31,20 @@ const CalcLimitValue = async (
       const sheet = await Sheets.findOne({
         _id: sheet_id,
       });
-      if (sheet) {
-        if (sheet.sheet_type === "export") {
-          if (limit) {
-            limit.value = expensesSum;
-            await limit.save();
+
+      if (considerSheetType) {
+        if (sheet) {
+          if (sheet.sheet_type === "export") {
+            if (limit) {
+              limit.value = expensesSum;
+              await limit.save();
+            }
           }
+        }
+      } else {
+        if (limit) {
+          limit.value = expensesSum;
+          await limit.save();
         }
       }
     });

@@ -9,11 +9,11 @@ const Limit = require("../models/LimitSchema");
 const SheetValue = require("./SheetValue");
 const Do_Statistics = require("./statistics");
 const UpdateUserData = require("./updateUserData");
+const CalcLimitValue = require("./calcLimitValue");
 
 const mongoose = require("mongoose");
 
 const jwt = require("jsonwebtoken");
-const CalcLimitValue = require("./calcLimitValue");
 
 // ######## Limits ##########
 const deleteLimit = (req, res) => {
@@ -495,8 +495,8 @@ const addExpenses = (req, res) => {
             });
             await newExpense.save().then(async () => {
               await SheetValue(sheet_id);
-              await UpdateUserData(authData.userId, sheet_id);
-              await CalcLimitValue(authData.userId, sheet_id);
+              await UpdateUserData(authData.userId, sheet_id, true);
+              await CalcLimitValue(authData.userId, sheet_id, true);
               await Do_Statistics(authData.userId);
             });
 
@@ -638,8 +638,8 @@ const deleteExpense = (req, res) => {
                 .then(async () => {
                   await Do_Statistics(authData.userId);
                   await SheetValue(sheet_id);
-                  await UpdateUserData(authData.userId, sheet_id);
-                  await CalcLimitValue(authData.userId, sheet_id);
+                  await UpdateUserData(authData.userId, sheet_id, true);
+                  await CalcLimitValue(authData.userId, sheet_id, true);
                   res.status(200).json({
                     msg: "Expense Deleted Successfully",
                   });
@@ -746,9 +746,14 @@ const updateExpense = (req, res) => {
                 description,
               }
             ).then(async () => {
-              await UpdateUserData(authData.userId, sheet_id);
+              await UpdateUserData(authData.userId, sheet_id, true);
               await Do_Statistics(authData.userId);
-              await CalcLimitValue(authData.userId, sheet_id, expense.value);
+              await CalcLimitValue(
+                authData.userId,
+                sheet_id,
+                expense.value,
+                true
+              );
               await SheetValue(sheet_id);
             });
 
@@ -1119,20 +1124,23 @@ const getStatistics = (req, res) => {
             });
           } else {
             //get user spent budget
-            const user = await UserData.findOne({
-              user_id: authData.userId,
-            });
 
-            const userStates = await statistics.find({
-              user_id: authData.userId,
-            });
+            Do_Statistics(authData.userId).then(async () => {
+              const user = await UserData.findOne({
+                user_id: authData.userId,
+              });
 
-            res.status(200).json({
-              msg: "Statistics Fetched Successfully",
-              data: {
-                spent_budget: user.spent,
-                statistics: userStates,
-              },
+              const userStates = await statistics.find({
+                user_id: authData.userId,
+              });
+
+              res.status(200).json({
+                msg: "Statistics Fetched Successfully",
+                data: {
+                  spent_budget: user.spent,
+                  statistics: userStates,
+                },
+              });
             });
           }
         }
@@ -1190,8 +1198,8 @@ const addSheets = (req, res) => {
               .save()
               .then(async (data) => {
                 await SheetValue(data._id);
-                await UpdateUserData(authData.userId, data._id);
-                await CalcLimitValue(authData.userId, data._id);
+                await UpdateUserData(authData.userId, data._id, true);
+                await CalcLimitValue(authData.userId, data._id, true);
                 await Do_Statistics(authData.userId);
 
                 res.status(200).json({
@@ -1283,7 +1291,7 @@ const deleteSheet = (req, res) => {
     try {
       const bearer = bearerHeader.split(" ");
       const bearerToken = bearer[1];
-      jwt.verify(bearerToken, process.env.JWT_SECRET, (err, authData) => {
+      jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
         if (err) {
           res.status(403).json({
             msg: "Forbidden",
@@ -1304,30 +1312,37 @@ const deleteSheet = (req, res) => {
               errorLog,
             });
           } else {
-            Sheets.findOneAndDelete({ _id: sheet_id })
-              .then(async (data) => {
-                Expenses.deleteMany({ sheet_id: sheet_id }).then(
-                  async (data) => {
-                    await Do_Statistics(authData.userId);
-                    await SheetValue(sheet_id);
-                    await UpdateUserData(authData.userId, sheet_id);
-                    await CalcLimitValue(authData.userId, sheet_id);
-                    res.status(200).json({
-                      msg: "Sheet Deleted Successfully",
-                    });
-                  }
-                );
-              })
+            const response = await Sheets.findOneAndDelete({
+              _id: sheet_id,
+            });
 
-              .catch((err) => {
-                res.status(500).json({
-                  msg: "Something went wrong",
-                });
+            if (response) {
+              //delete all sheet expenses
+              await Expenses.deleteMany({
+                sheet_id,
               });
+
+              await Do_Statistics(authData.userId);
+              await UpdateUserData(authData.userId, response._id, false);
+              await CalcLimitValue(authData.userId, response._id, false);
+
+              res.status(200).json({
+                msg: "Sheet Deleted Successfully",
+              });
+            } else if (response === null) {
+              res.status(404).json({
+                msg: "Sheet already deleted",
+              });
+            } else {
+              res.status(500).json({
+                msg: "Something went wrong",
+              });
+            }
           }
         }
       });
     } catch (error) {
+      F;
       res.status(500).json({
         msg: "Internal Server Error",
         error,
