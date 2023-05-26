@@ -41,6 +41,14 @@ const Do_Statistics = async (user_id) => {
           }
         });
 
+        //solve the problem of dividing by zero
+        if (user_data.total === 0) {
+          user_data.total = 1;
+        }
+        if (user_data.spent === 0) {
+          user_data.spent = 1;
+        }
+
         const labelPercentageTotal = (labelSum / user_data.total) * 100;
         const labelPercentageSpent = (labelSum / user_data.spent) * 100;
 
