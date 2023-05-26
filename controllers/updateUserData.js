@@ -14,27 +14,32 @@ const UpdateUserData = async (user_id) => {
 
   //get all expenses of each sheet
   const allExportSheetsExpenses = [];
-  sheets.forEach(async (sheet) => {
-    const expenses = await Expenses.find({
-      sheet_id: sheet._id,
-    });
-    if (expenses.length > 0) {
-      expenses.forEach(async (expense) => {
-        allExportSheetsExpenses.push(expense);
+
+  if (sheets.length > 0) {
+    sheets.forEach(async (sheet) => {
+      const expenses = await Expenses.find({
+        sheet_id: sheet._id,
       });
+      if (expenses.length > 0) {
+        expenses.forEach(async (expense) => {
+          allExportSheetsExpenses.push(expense);
+        });
+      }
+    });
+
+    //calculate the total value of all sheets
+    let spent = 0;
+    allExportSheetsExpenses.forEach((expense) => {
+      spent += expense.value;
+    });
+
+    // update userData if found
+    if (userData) {
+      userData.spent = spent;
+      userData.remaining = userData.total - userData.spent;
+      await userData.save();
     }
-  });
-
-  //calculate the total value of all sheets
-  let spent = 0;
-  allExportSheetsExpenses.forEach((expense) => {
-    spent += expense.value;
-  });
-
-  // update userData
-  userData.spent = spent;
-  userData.remaining = userData.total - userData.spent;
-  await userData.save();
+  }
 };
 
 module.exports = UpdateUserData;
