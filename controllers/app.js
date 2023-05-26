@@ -495,8 +495,8 @@ const addExpenses = (req, res) => {
             });
             await newExpense.save().then(async () => {
               await SheetValue(sheet_id);
-              await UpdateUserData(authData.userId, sheet_id, true);
-              await CalcLimitValue(authData.userId, sheet_id, true);
+              await UpdateUserData(authData.userId);
+              await CalcLimitValue(authData.userId);
               await Do_Statistics(authData.userId);
             });
 
@@ -638,8 +638,8 @@ const deleteExpense = (req, res) => {
                 .then(async () => {
                   await Do_Statistics(authData.userId);
                   await SheetValue(sheet_id);
-                  await UpdateUserData(authData.userId, sheet_id, true);
-                  await CalcLimitValue(authData.userId, sheet_id, true);
+                  await UpdateUserData(authData.userId);
+                  await CalcLimitValue(authData.userId);
                   res.status(200).json({
                     msg: "Expense Deleted Successfully",
                   });
@@ -746,14 +746,9 @@ const updateExpense = (req, res) => {
                 description,
               }
             ).then(async () => {
-              await UpdateUserData(authData.userId, sheet_id, true);
+              await UpdateUserData(authData.userId);
               await Do_Statistics(authData.userId);
-              await CalcLimitValue(
-                authData.userId,
-                sheet_id,
-                expense.value,
-                true
-              );
+              await CalcLimitValue(authData.userId);
               await SheetValue(sheet_id);
             });
 
@@ -1198,8 +1193,8 @@ const addSheets = (req, res) => {
               .save()
               .then(async (data) => {
                 await SheetValue(data._id);
-                await UpdateUserData(authData.userId, data._id, true);
-                await CalcLimitValue(authData.userId, data._id, true);
+                await UpdateUserData(authData.userId);
+                await CalcLimitValue(authData.userId);
                 await Do_Statistics(authData.userId);
 
                 res.status(200).json({
@@ -1323,8 +1318,8 @@ const deleteSheet = (req, res) => {
               });
 
               await Do_Statistics(authData.userId);
-              await UpdateUserData(authData.userId, response._id, false);
-              await CalcLimitValue(authData.userId, response._id, false);
+              await UpdateUserData(authData.userId);
+              await CalcLimitValue(authData.userId);
 
               res.status(200).json({
                 msg: "Sheet Deleted Successfully",

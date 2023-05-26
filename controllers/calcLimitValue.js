@@ -1,4 +1,4 @@
-const expenses = require("../models/expenses");
+const Expenses = require("../models/expenses");
 const limits = require("../models/LimitSchema");
 const Sheets = require("../models/sheetSchema");
 const Labels = require("../models/LabelSchema");
