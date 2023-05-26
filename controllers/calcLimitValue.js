@@ -29,10 +29,11 @@ const CalcLimitValue = async (user_id) => {
       for (const label of labels) {
         const labelSum = labelsSums[label.label] || 0;
         const limit = allLimits.find((limit) => limit.label === label.label);
+
         if (limit) {
           await Limits.findOneAndUpdate(
             { _id: limit._id },
-            { limit_value: labelSum },
+            { value: labelSum },
             { new: true }
           );
         }
