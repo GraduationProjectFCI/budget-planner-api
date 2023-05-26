@@ -2,52 +2,49 @@ const expenses = require("../models/expenses");
 const limits = require("../models/LimitSchema");
 const Sheets = require("../models/sheetSchema");
 const Labels = require("../models/LabelSchema");
-const CalcLimitValue = async (user_id, sheet_id, considerSheetType) => {
-  //get labels
-  const labels = await Labels.find({
-    user_id,
-  });
+const CalcLimitValue = async (user_id) => {
+  //get all user sheets in type export
+  const sheets = await Sheets.find({ user_id: user_id, sheet_type: "export" });
 
-  if (labels) {
-    labels.map(async (item) => {
-      let expensesSum = 0;
-      const { label } = item;
-      //get expenses
-      const LabelExpenses = await expenses.find({
-        user_id,
-        label,
-      });
-
-      LabelExpenses.map((label) => {
-        expensesSum += label.value;
-      });
-
-      //get limit
-      const limit = await limits.findOne({
-        user_id,
-        label,
-      });
-
-      const sheet = await Sheets.findOne({
-        _id: sheet_id,
-      });
-
-      if (considerSheetType) {
-        if (sheet) {
-          if (sheet.sheet_type === "export") {
-            if (limit) {
-              limit.value = expensesSum;
-              await limit.save();
-            }
-          }
-        }
-      } else {
-        if (limit) {
-          limit.value = expensesSum;
-          await limit.save();
-        }
+  //get all user expenses if there are sheets
+  if (sheets.length > 0) {
+    const allExportSheetsExpenses = [];
+    sheets.forEach(async (sheet) => {
+      const expenses = await Expenses.find({ sheet_id: sheet._id });
+      if (expenses.length > 0) {
+        expenses.forEach(async (expense) => {
+          allExportSheetsExpenses.push(expense);
+        });
       }
     });
+
+    //get all user labels
+    const labels = await Labels.find({ user_id: user_id });
+
+    //get all user limits
+    const allLimits = await limits.find({ user_id: user_id });
+
+    // calculate the sum of each label expenses
+    if (labels.length > 0) {
+      labels.forEach(async (label) => {
+        let labelSum = 0;
+        allExportSheetsExpenses.map((expense) => {
+          if (expense.label === label.label) {
+            labelSum += expense.value;
+          }
+        });
+
+        //get the limit of each label value if there are limits
+        if (allLimits.length > 0) {
+          allLimits.forEach(async (limit) => {
+            if (limit.label === label.label) {
+              limit.limit_value = labelSum;
+              await limit.save();
+            }
+          });
+        }
+      });
+    }
   }
 };
 

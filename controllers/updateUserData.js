@@ -1,41 +1,40 @@
 const Sheets = require("../models/sheetSchema");
 const UserData = require("../models/user_data_modal");
 const Expenses = require("../models/expenses");
-const UpdateUserData = async (user_id, sheet_id, considerSheetType) => {
+const UpdateUserData = async (user_id) => {
   const userData = await UserData.findOne({
     user_id,
   });
 
-  const sheet = await Sheets.findOne({
-    _id: sheet_id,
-  });
-
-  // get all expenses
-  const expenses = await Expenses.find({
+  //get all sheets of type export
+  const sheets = await Sheets.find({
     user_id,
-  });
-  let expenses_value = 0;
-  expenses.forEach((expense) => {
-    expenses_value += expense.value;
+    sheet_type: "export",
   });
 
-  if (considerSheetType) {
-    if (sheet) {
-      if (sheet.sheet_type === "export") {
-        if (userData) {
-          userData.spent = expenses_value;
-          userData.remaining = userData.total - expenses_value;
-          await userData.save();
-        }
-      }
+  //get all expenses of each sheet
+  const allExportSheetsExpenses = [];
+  sheets.forEach(async (sheet) => {
+    const expenses = await Expenses.find({
+      sheet_id: sheet._id,
+    });
+    if (expenses.length > 0) {
+      expenses.forEach(async (expense) => {
+        allExportSheetsExpenses.push(expense);
+      });
     }
-  } else {
-    if (userData) {
-      userData.spent = expenses_value;
-      userData.remaining = userData.total - expenses_value;
-      await userData.save();
-    }
-  }
+  });
+
+  //calculate the total value of all sheets
+  let spent = 0;
+  allExportSheetsExpenses.forEach((expense) => {
+    spent += expense.value;
+  });
+
+  // update userData
+  userData.spent = spent;
+  userData.remaining = userData.total - userData.spent;
+  await userData.save();
 };
 
 module.exports = UpdateUserData;
