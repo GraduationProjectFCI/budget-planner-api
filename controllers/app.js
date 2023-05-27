@@ -189,6 +189,7 @@ const getLimits = (req, res) => {
               errorLog,
             });
           } else {
+            await CalcLimitValue(authData.userId);
             const limits = await Limit.find({
               user_id: authData.userId,
             });
@@ -1569,8 +1570,10 @@ const deleteLabel = (req, res) => {
             });
           } else {
             Labels.findByIdAndDelete(label_id)
-              .then((data) => {
-                DoStatistics(authData.userId);
+              .then(async (data) => {
+                await DoStatistics(authData.userId);
+                await CalcLimitValue(authData.userId);
+
                 res.status(200).json({
                   msg: "Label Deleted Successfully",
                   data,
