@@ -136,12 +136,13 @@ const register = async (req, res) => {
 
       send_mail(RandomCode, req.body.email);
 
+      const UCurrency = currency.toUpperCase();
       const user = await User.create({
         name,
         email,
         password,
         gender: gender.toLowerCase(),
-        currency,
+        currency: UCurrency,
         budget,
         birthdate,
         image: "",
