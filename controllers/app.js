@@ -342,7 +342,7 @@ const getProfileData = (req, res) => {
 };
 
 const updateProfileData = (req, res) => {
-  const { name, gender, budget, currnecy } = req.body;
+  const { name, budget, currnecy } = req.body;
   const errorLog = [];
   // validate bearer token in the request headers
   const bearerHeader = req.headers["authorization"];
@@ -368,10 +368,6 @@ const updateProfileData = (req, res) => {
             errorLog.push("name is required");
           }
 
-          if (!gender) {
-            errorLog.push("gender is required");
-          }
-
           if (!budget) {
             errorLog.push("budget is required");
           }
@@ -392,7 +388,6 @@ const updateProfileData = (req, res) => {
               },
               {
                 name,
-                gender,
                 budget,
                 currnecy,
               },
