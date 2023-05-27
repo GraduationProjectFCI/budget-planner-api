@@ -381,8 +381,6 @@ const updateProfileData = (req, res) => {
               errorLog,
             });
           } else {
-            const UCurrency = currency.toUpperCase();
-
             const userData = await User.findOneAndUpdate(
               {
                 _id: authData.userId,
@@ -390,7 +388,7 @@ const updateProfileData = (req, res) => {
               {
                 name,
                 budget,
-                currency: UCurrency,
+                currency: currency.toUpperCase(),
               },
               {
                 new: true,
