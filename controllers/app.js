@@ -372,7 +372,7 @@ const updateProfileData = (req, res) => {
             errorLog.push("budget is required");
           }
 
-          if (!currnecy) {
+          if (!currency) {
             errorLog.push("currnecy is required");
           }
 
@@ -389,7 +389,7 @@ const updateProfileData = (req, res) => {
               {
                 name,
                 budget,
-                currnecy,
+                currency,
               },
               {
                 new: true,
