@@ -322,8 +322,7 @@ const getProfileData = (req, res) => {
             })
               .select("-password")
               .select("-_id")
-              .select("-__v")
-              .select("-birthdate");
+              .select("-__v");
 
             res.status(200).json({
               msg: "success",
