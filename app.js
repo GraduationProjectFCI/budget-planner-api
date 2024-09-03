@@ -9,6 +9,7 @@ const cors = require("cors");
 const allowedOrigins = [
   "https://budget-planner-web.vercel.app",
   "http://localhost:3000",
+  "http://localhost:4200"
 ];
 
 app.use(
