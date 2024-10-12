@@ -9,7 +9,7 @@ const cors = require("cors");
 const allowedOrigins = [
   "https://budget-planner-web.vercel.app",
   "http://localhost:3000",
-  "http://localhost:4200"
+  "http://localhost:4200",
 ];
 
 app.use(
@@ -28,14 +28,13 @@ const mongoose = require("mongoose");
 
 // import created functions
 const authRouter = require("./routes/auth");
-const appRouter = require("./routes/app");
+const appRouter = require("./routes/appRouter");
 
 // use express.json() to parse JSON bodies into JS objects
 app.use(express.json());
 
 //routes
-app.use("/api/v1/auth", authRouter);
-app.use("/api/v1/app", appRouter);
+app.use("/api/v1", appRouter);
 
 app.get("/", (req, res) => {
   res.send("Hello World!");
