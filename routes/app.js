@@ -25,6 +25,7 @@ const {
   getLimits,
   deleteLimit,
   updateLimit,
+  resetSpentBudget,
 } = require("../controllers/app");
 
 //added to the gateway servicee
@@ -58,5 +59,7 @@ router.route("/profile").get(getProfileData).patch(updateProfileData);
 
 router.route("/limits").post(addLimit).get(getLimits);
 router.route("/limits/:limit_id").delete(deleteLimit).patch(updateLimit);
+
+router.route("/reset-spent-budget").post(resetSpentBudget);
 
 module.exports = router;

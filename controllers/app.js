@@ -1649,6 +1649,64 @@ const get_user_data = (req, res) => {
   }
 };
 
+// ######## RESET SPENT BUDGET ##########
+const resetSpentBudget = (req, res) => {
+  const errorLog = [];
+
+  // validate bearer token in the request headers
+  const bearerHeader = req.headers["authorization"];
+  if (typeof bearerHeader === "undefined") {
+    res.status(401).json({
+      msg: "Unauthorized",
+    });
+  } else {
+    try {
+      const bearer = bearerHeader.split(" ");
+      const bearerToken = bearer[1];
+      jwt.verify(bearerToken, process.env.JWT_SECRET, async (err, authData) => {
+        if (err) {
+          res.status(403).json({
+            msg: "Forbidden",
+          });
+        } else {
+          if (!authData.userId) {
+            errorLog.push("user_id is required");
+          }
+
+          if (errorLog.length > 0) {
+            res.status(400).json({
+              msg: "Bad Request",
+              errorLog,
+            });
+          } else {
+            const userData = await UserData.findOne({
+              user_id: authData.userId,
+            });
+
+            if (userData) {
+              userData.spent = 0;
+              await userData.save();
+
+              res.status(200).json({
+                msg: "Spent budget reset to 0 successfully",
+              });
+            } else {
+              res.status(404).json({
+                msg: "User data not found",
+              });
+            }
+          }
+        }
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Internal Server Error",
+        error,
+      });
+    }
+  }
+};
+
 module.exports = {
   get_user_data,
   addLabels,
@@ -1674,4 +1732,5 @@ module.exports = {
   getLimits,
   updateLimit,
   deleteLimit,
+  resetSpentBudget,
 };
